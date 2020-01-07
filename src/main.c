@@ -88,15 +88,10 @@ int main(int argc, const char *argv[])
 			if (size < 0)
 				break;
 
-			if (size) {
-				s[0] = hexchar(size >> 4);
-				s[1] = hexchar(size & 0x0f);
-				s[2] = ':';
-				s[3] = ' ';
-				s[4 + size] = '\r';
-				s[5 + size] = '\n';
-				if (cdc_send(tty, s, size + 6) < 0)
-					break;
+			if (s[4] == '\r') {
+				/* Interactive mode */
+				debug_print("Entering interactive mode.\r\n");
+				cli_main(tty, &s[4], size);
 			}
 		}
 	}
