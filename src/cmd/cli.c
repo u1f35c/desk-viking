@@ -94,32 +94,36 @@ static void cli_states(struct cdc *tty)
 
 static void cli_process_cmd(struct cdc *tty, const char *cmd, unsigned int len)
 {
-	(void)len;
-
-	switch (cmd[0]) {
-	case '?':
-		cli_help(tty);
-		break;
-	case '#':
-		cli_reset(tty);
-		break;
-	case '@':
-		cli_aux_read(tty);
-		break;
-	case 'a':
-		cli_aux_set(tty, false);
-		break;
-	case 'A':
-		cli_aux_set(tty, true);
-		break;
-	case 'i':
-		cli_banner(tty);
-		break;
-	case 'v':
-		cli_states(tty);
-		break;
-	default:
-		tty_printf(tty, "Unknown command.\r\n");
+	while (len > 0) {
+		switch (*(cmd++)) {
+		case ' ':
+			/* Ignore */
+			break;
+		case '?':
+			cli_help(tty);
+			break;
+		case '#':
+			cli_reset(tty);
+			break;
+		case '@':
+			cli_aux_read(tty);
+			break;
+		case 'a':
+			cli_aux_set(tty, false);
+			break;
+		case 'A':
+			cli_aux_set(tty, true);
+			break;
+		case 'i':
+			cli_banner(tty);
+			break;
+		case 'v':
+			cli_states(tty);
+			break;
+		default:
+			tty_printf(tty, "Unknown command.\r\n");
+		}
+		len--;
 	}
 }
 
