@@ -38,10 +38,18 @@ static void cli_banner(struct cdc *tty)
 static void cli_help(struct cdc *tty)
 {
 	tty_printf(tty, "General\r\n");
-	tty_printf(tty, "-------------------\r\n");
+	tty_printf(tty, "--00-----------------\r\n");
 	tty_printf(tty, "? Help\r\n");
+	tty_printf(tty, "# Reset CLI state\r\n");
 	tty_printf(tty, "i Version/status info\r\n");
 	tty_printf(tty, "v Show volts/states\r\n");
+}
+
+static void cli_reset(struct cdc *tty)
+{
+	/* No-op for now, will reset back to HiZ eventually */
+	tty_printf(tty, "RESET\r\n\r\n");
+	cli_banner(tty);
 }
 
 static void cli_states(struct cdc *tty)
@@ -73,6 +81,9 @@ static void cli_process_cmd(struct cdc *tty, const char *cmd, unsigned int len)
 	switch (cmd[0]) {
 	case '?':
 		cli_help(tty);
+		break;
+	case '#':
+		cli_reset(tty);
 		break;
 	case 'i':
 		cli_banner(tty);
