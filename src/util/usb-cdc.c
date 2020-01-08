@@ -255,20 +255,18 @@ static const uint8_t vcom_string0[4] = {
 };
 
 static const uint8_t vcom_string1[] = {
-	23*2+2,			/* bLength */
+	8*2+2,			/* bLength */
 	STRING_DESCRIPTOR,		/* bDescriptorType */
-	/* Manufacturer: "Flying Stone Technology" */
-	'F', 0, 'l', 0, 'y', 0, 'i', 0, 'n', 0, 'g', 0, ' ', 0, 'S', 0,
-	't', 0, 'o', 0, 'n', 0, 'e', 0, ' ', 0, 'T', 0, 'e', 0, 'c', 0,
-	'h', 0, 'n', 0, 'o', 0, 'l', 0, 'o', 0, 'g', 0, 'y', 0,
+	/* Manufacturer: "earth.li" */
+	'e', 0, 'a', 0, 'r', 0, 't', 0, 'h', 0, '.', 0, 'l', 0, 'i', 0,
 };
 
 static const uint8_t vcom_string2[] = {
-	14*2+2,			/* bLength */
+	11*2+2,			/* bLength */
 	STRING_DESCRIPTOR,		/* bDescriptorType */
-	/* Product name: "Chopstx Serial" */
-	'C', 0, 'h', 0, 'o', 0, 'p', 0, 's', 0, 't', 0, 'x', 0, ' ', 0,
-	'S', 0, 'e', 0, 'r', 0, 'i', 0, 'a', 0, 'l', 0,
+	/* Product name: "Desk Viking" */
+	'D', 0, 'e', 0, 's', 0, 'k', 0, ' ', 0,
+	'V', 0, 'i', 0, 'k', 0, 'i', 0, 'n', 0, 'g', 0,
 };
 
 /*
