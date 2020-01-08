@@ -6,8 +6,11 @@
  *
  * Copyright 2020 Jonathan McDowell <noodles@earth.li>
  */
+#include <stdint.h>
 #include <string.h>
+#include <sys.h>
 
+#include "board.h"
 #include "cdc.h"
 #include "debug.h"
 #include "gpio.h"
@@ -24,8 +27,12 @@ void tty_putc(struct cdc *tty, const char c)
 
 static void cli_banner(struct cdc *tty)
 {
-	tty_printf(tty, "DeskViking 0.1\r\n");
-	tty_printf(tty, "--------------\r\n");
+	tty_printf(tty, "DeskViking v0.1\r\n");
+	tty_printf(tty, "Board name: " BOARD_NAME ", SYS Version: ");
+	tty_putc(tty, sys_version[2]);
+	tty_putc(tty, sys_version[4]);
+	tty_putc(tty, sys_version[6]);
+	tty_printf(tty, "\r\n");
 }
 
 static void cli_help(struct cdc *tty)
@@ -33,6 +40,7 @@ static void cli_help(struct cdc *tty)
 	tty_printf(tty, "General\r\n");
 	tty_printf(tty, "-------------------\r\n");
 	tty_printf(tty, "? Help\r\n");
+	tty_printf(tty, "i Version/status info\r\n");
 	tty_printf(tty, "v Show volts/states\r\n");
 }
 
@@ -65,6 +73,9 @@ static void cli_process_cmd(struct cdc *tty, const char *cmd, unsigned int len)
 	switch (cmd[0]) {
 	case '?':
 		cli_help(tty);
+		break;
+	case 'i':
+		cli_banner(tty);
 		break;
 	case 'v':
 		cli_states(tty);
