@@ -25,6 +25,23 @@ void tty_putc(struct cdc *tty, const char c)
 	cdc_send(tty, &c, 1);
 }
 
+static void cli_aux_read(struct cdc *tty)
+{
+	/* Set AUX to input */
+	gpio_set_direction(PIN_AUX, true);
+	tty_printf(tty, "AUX INPUT/HI-Z, READ: ");
+	tty_putc(tty, gpio_get(PIN_AUX) ? '1' : '0');
+	tty_printf(tty, "\r\n");
+}
+
+static void cli_aux_set(struct cdc *tty, bool on)
+{
+	/* Set AUX to output */
+	gpio_set_direction(PIN_AUX, false);
+	gpio_set(PIN_AUX, on);
+	tty_printf(tty, on ? "AUX HIGH\r\n" : "AUX LOW\r\n");
+}
+
 static void cli_banner(struct cdc *tty)
 {
 	tty_printf(tty, "DeskViking v0.1\r\n");
@@ -38,11 +55,12 @@ static void cli_banner(struct cdc *tty)
 static void cli_help(struct cdc *tty)
 {
 	tty_printf(tty, "General\r\n");
-	tty_printf(tty, "--00-----------------\r\n");
-	tty_printf(tty, "? Help\r\n");
-	tty_printf(tty, "# Reset CLI state\r\n");
-	tty_printf(tty, "i Version/status info\r\n");
-	tty_printf(tty, "v Show volts/states\r\n");
+	tty_printf(tty, "--------------------------------\r\n");
+	tty_printf(tty, "?      Help\r\n");
+	tty_printf(tty, "#      Reset CLI state\r\n");
+	tty_printf(tty, "a/A/@  Set AUX low/HI/read value\r\n");
+	tty_printf(tty, "i      Version/status info\r\n");
+	tty_printf(tty, "v      Show volts/states\r\n");
 }
 
 static void cli_reset(struct cdc *tty)
@@ -84,6 +102,15 @@ static void cli_process_cmd(struct cdc *tty, const char *cmd, unsigned int len)
 		break;
 	case '#':
 		cli_reset(tty);
+		break;
+	case '@':
+		cli_aux_read(tty);
+		break;
+	case 'a':
+		cli_aux_set(tty, false);
+		break;
+	case 'A':
+		cli_aux_set(tty, true);
 		break;
 	case 'i':
 		cli_banner(tty);
