@@ -8,6 +8,8 @@
  */
 #include <stdint.h>
 #include <string.h>
+
+#include <chopstx.h>
 #include <sys.h>
 
 #include "board.h"
@@ -52,12 +54,24 @@ static void cli_banner(struct cdc *tty)
 	tty_printf(tty, "\r\n");
 }
 
+static void cli_delay(struct cdc *tty, bool ms)
+{
+	if (ms) {
+		tty_printf(tty, "DELAY 1ms\r\n");
+		chopstx_usec_wait(1000);
+	} else {
+		tty_printf(tty, "DELAY 1µs\r\n");
+		chopstx_usec_wait(1);
+	}
+}
+
 static void cli_help(struct cdc *tty)
 {
 	tty_printf(tty, "General\r\n");
 	tty_printf(tty, "--------------------------------\r\n");
 	tty_printf(tty, "?      Help\r\n");
 	tty_printf(tty, "#      Reset CLI state\r\n");
+	tty_printf(tty, "&/%    Delay 1µs/ms\r\n");
 	tty_printf(tty, "a/A/@  Set AUX low/HI/read value\r\n");
 	tty_printf(tty, "i      Version/status info\r\n");
 	tty_printf(tty, "v      Show volts/states\r\n");
@@ -104,6 +118,12 @@ static void cli_process_cmd(struct cdc *tty, const char *cmd, unsigned int len)
 			break;
 		case '#':
 			cli_reset(tty);
+			break;
+		case '&':
+			cli_delay(tty, false);
+			break;
+		case '%':
+			cli_delay(tty, true);
 			break;
 		case '@':
 			cli_aux_read(tty);
