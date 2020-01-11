@@ -6,7 +6,7 @@ CHOPSTX ?= ../chopstx
 LDSCRIPT = desk-viking.ld
 CSRC = src/main.c \
        src/cmd/cli.c \
-       src/util/debug.c src/util/gpio.c src/util/usb-cdc.c
+       src/util/debug.c src/util/gpio.c src/util/tty.c src/util/usb-cdc.c
 
 CHIP=stm32f103
 

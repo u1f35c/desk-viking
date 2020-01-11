@@ -16,16 +16,7 @@
 #include "cdc.h"
 #include "debug.h"
 #include "gpio.h"
-
-void tty_printf(struct cdc *tty, const char *str)
-{
-	cdc_send(tty, str, strlen(str));
-}
-
-void tty_putc(struct cdc *tty, const char c)
-{
-	cdc_send(tty, &c, 1);
-}
+#include "tty.h"
 
 static void cli_aux_read(struct cdc *tty)
 {
@@ -157,51 +148,16 @@ void cli_main(struct cdc *tty, const char *s, int len)
 
 	cli_banner(tty);
 
-	tty_printf(tty, ">");
-	cmd_len = 0;
 	while (1) {
-		char buf[65];
-		int i;
-		int size;
-		uint32_t timeout;
-
-
-		timeout = 3000000; /* 3.0 seconds */
-		size = cdc_recv(tty, buf, &timeout);
-
-		if (size < 0)
-			return;
-
-		if (size > 0) {
-			for (i = 0; i < size; i++) {
-				switch (buf[i]) {
-				case 0x0D: /* CR / Control-M */
-					tty_printf(tty, "\r\n");
-					/* Process cmd */
-					if (cmd_len > 0) {
-						cmd[cmd_len] = 0;
-						cli_process_cmd(tty, cmd, cmd_len);
-						cmd_len = 0;
-					}
-					tty_printf(tty, ">");
-					break;
-				case 0x7F: /* DEL */
-					if (cmd_len > 0) {
-						tty_printf(tty, "\010 \010");
-						cmd_len--;
-					}
-					break;
-				default:
-					if (cmd_len < (sizeof(cmd) - 1)) {
-						tty_putc(tty, buf[i]);
-						cmd[cmd_len++] = buf[i];
-					} else {
-						/* BEL */
-						tty_putc(tty, 7);
-					}
-					break;
-				}
-			}
+		tty_printf(tty, ">");
+		cmd_len = tty_readline(tty, cmd, sizeof(cmd));
+		/* Process cmd */
+		if (cmd_len > 0) {
+			cmd[cmd_len] = 0;
+			cli_process_cmd(tty, cmd, cmd_len);
+			cmd_len = 0;
+		} else if (cmd_len < 0) {
+			break;
 		}
 	}
 
