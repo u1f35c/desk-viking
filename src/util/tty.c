@@ -29,11 +29,12 @@ void tty_printdec(struct cdc *tty, int val)
 	int digit;
 	int pos = 0;
 
-	while (column > 10) {
+	while (column >= 10) {
 		digit = val / column;
 		if (donedigit || (digit > 0)) {
 			buf[pos++] = digit + '0';
 			val %= column;
+			donedigit = true;
 		}
 		column /= 10;
 	}
