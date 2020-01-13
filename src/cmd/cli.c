@@ -6,6 +6,7 @@
  *
  * Copyright 2020 Jonathan McDowell <noodles@earth.li>
  */
+#include <ctype.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -59,14 +60,16 @@ static void cli_banner(struct cli_state *state)
 	tty_printf(state->tty, "\r\n");
 }
 
-static void cli_delay(struct cli_state *state, bool ms)
+static void cli_delay(struct cli_state *state, bool ms, unsigned int repeat)
 {
+	tty_printf(state->tty, "DELAY ");
+	tty_printdec(state->tty, repeat);
 	if (ms) {
-		tty_printf(state->tty, "DELAY 1ms\r\n");
-		chopstx_usec_wait(1000);
+		tty_printf(state->tty, "ms\r\n");
+		chopstx_usec_wait(1000 * repeat);
 	} else {
-		tty_printf(state->tty, "DELAY 1µs\r\n");
-		chopstx_usec_wait(1);
+		tty_printf(state->tty, "µs\r\n");
+		chopstx_usec_wait(repeat);
 	}
 }
 
@@ -112,9 +115,40 @@ static void cli_states(struct cli_state *state)
 	tty_printf(state->tty, "\r\n");
 }
 
+static int cli_parse_repeat(const char **cmd, unsigned int *len)
+{
+	unsigned int repeat, pos;
+
+	if (*len < 2) {
+		return 1;
+	}
+	if (**cmd != ':') {
+		return 1;
+	}
+
+	repeat = 0;
+	for (pos = 1; (pos < *len) && isdigit((*cmd)[pos]); pos++) {
+		repeat *= 10;
+		repeat += (*cmd)[pos] - '0';
+	}
+
+	if (repeat == 0) {
+		return 1;
+	}
+
+	*len -= pos;
+	*cmd += pos;
+	return repeat;
+}
+
 static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned int len)
 {
+	unsigned int repeat, pos;
+
+	pos = 0;
 	while (len > 0) {
+		len--;
+		pos++;
 		switch (*(cmd++)) {
 		case ' ':
 			/* Ignore */
@@ -126,10 +160,12 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 			cli_reset(state);
 			break;
 		case '&':
-			cli_delay(state, false);
+			repeat = cli_parse_repeat(&cmd, &len);
+			cli_delay(state, false, repeat);
 			break;
 		case '%':
-			cli_delay(state, true);
+			repeat = cli_parse_repeat(&cmd, &len);
+			cli_delay(state, true, repeat);
 			break;
 		case '@':
 			cli_aux_read(state);
@@ -147,9 +183,11 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 			cli_states(state);
 			break;
 		default:
-			tty_printf(state->tty, "Unknown command.\r\n");
+			tty_printf(state->tty, "Syntax error at char ");
+			tty_printdec(state->tty, pos);
+			tty_printf(state->tty, "\r\n");
+			len = 0;
 		}
-		len--;
 	}
 }
 
