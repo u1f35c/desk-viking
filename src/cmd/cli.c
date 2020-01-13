@@ -24,33 +24,43 @@ enum cli_mode {
 	MODE_MAX
 };
 
-const char *cli_mode_str[] = {
-	"HiZ",
-};
-
 struct cli_state {
 	struct cdc *tty;
 	enum cli_mode mode;
 };
 
-static void cli_aux_read(struct cli_state *state)
+const struct cli_mode_info {
+	char *name;
+	void (*start)(struct cli_state *);
+	void (*stop)(struct cli_state *);
+	void (*read)(struct cli_state *);
+	void (*write)(struct cli_state *, uint8_t val);
+} cli_modes[] = {
+	{ .name = "HiZ" },
+};
+
+static bool cli_aux_read(struct cli_state *state)
 {
 	/* Set AUX to input */
 	gpio_set_direction(PIN_AUX, true);
 	tty_printf(state->tty, "AUX INPUT/HI-Z, READ: ");
 	tty_putc(state->tty, gpio_get(PIN_AUX) ? '1' : '0');
 	tty_printf(state->tty, "\r\n");
+
+	return true;
 }
 
-static void cli_aux_set(struct cli_state *state, bool on)
+static bool cli_aux_set(struct cli_state *state, bool on)
 {
 	/* Set AUX to output */
 	gpio_set_direction(PIN_AUX, false);
 	gpio_set(PIN_AUX, on);
 	tty_printf(state->tty, on ? "AUX HIGH\r\n" : "AUX LOW\r\n");
+
+	return true;
 }
 
-static void cli_banner(struct cli_state *state)
+static bool cli_banner(struct cli_state *state)
 {
 	tty_printf(state->tty, "DeskViking v0.1\r\n");
 	tty_printf(state->tty, "Board name: " BOARD_NAME ", SYS Version: ");
@@ -58,9 +68,11 @@ static void cli_banner(struct cli_state *state)
 	tty_putc(state->tty, sys_version[4]);
 	tty_putc(state->tty, sys_version[6]);
 	tty_printf(state->tty, "\r\n");
+
+	return true;
 }
 
-static void cli_delay(struct cli_state *state, bool ms, unsigned int repeat)
+static bool cli_delay(struct cli_state *state, bool ms, unsigned int repeat)
 {
 	tty_printf(state->tty, "DELAY ");
 	tty_printdec(state->tty, repeat);
@@ -71,9 +83,11 @@ static void cli_delay(struct cli_state *state, bool ms, unsigned int repeat)
 		tty_printf(state->tty, "µs\r\n");
 		chopstx_usec_wait(repeat);
 	}
+
+	return true;
 }
 
-static void cli_help(struct cli_state *state)
+static bool cli_help(struct cli_state *state)
 {
 	tty_printf(state->tty, "General\r\n");
 	tty_printf(state->tty, "--------------------------------\r\n");
@@ -83,17 +97,19 @@ static void cli_help(struct cli_state *state)
 	tty_printf(state->tty, "a/A/@  Set AUX low/HI/read value\r\n");
 	tty_printf(state->tty, "i      Version/status info\r\n");
 	tty_printf(state->tty, "v      Show volts/states\r\n");
+
+	return true;
 }
 
-static void cli_reset(struct cli_state *state)
+static bool cli_reset(struct cli_state *state)
 {
 	tty_printf(state->tty, "RESET\r\n\r\n");
 	state->mode = MODE_HIZ;
 	/* TODO: Reset back to all inputs */
-	cli_banner(state);
+	return cli_banner(state);
 }
 
-static void cli_states(struct cli_state *state)
+static bool cli_states(struct cli_state *state)
 {
 	tty_printf(state->tty, "Pinstates:\r\n");
 	tty_printf(state->tty, "GND\t3.3V\t5.0V\tADC\tVPU\tAUX\tCLK\tMOSI\tCS\tMISO\r\n");
@@ -113,9 +129,72 @@ static void cli_states(struct cli_state *state)
 	tty_printf(state->tty, gpio_get(PIN_CS) ? "H\t" : "L\t");
 	tty_printf(state->tty, gpio_get(PIN_MISO) ? "H\t" : "L\t");
 	tty_printf(state->tty, "\r\n");
+
+	return true;
 }
 
-static int cli_parse_repeat(const char **cmd, unsigned int *len)
+/*
+ * Handlers specific to the protocol in operation
+ */
+
+static bool cli_proto_null(struct cli_state *state)
+{
+	tty_printf(state->tty, "Error: Command has no effect here.\r\n");
+
+	return false;
+}
+
+static bool cli_proto_start(struct cli_state *state)
+{
+	if (cli_modes[state->mode].start) {
+		cli_modes[state->mode].start(state);
+		return true;
+	} else {
+		return cli_proto_null(state);
+	}
+}
+
+static bool cli_proto_stop(struct cli_state *state)
+{
+	if (cli_modes[state->mode].stop) {
+		cli_modes[state->mode].stop(state);
+		return true;
+	} else {
+		return cli_proto_null(state);
+	}
+}
+
+static bool cli_proto_read(struct cli_state *state, unsigned int repeat)
+{
+	if (cli_modes[state->mode].read) {
+		tty_printf(state->tty, "READ: ");
+		while (repeat--)
+			cli_modes[state->mode].read(state);
+		tty_printf(state->tty, "\r\n");
+		return true;
+	} else {
+		return cli_proto_null(state);
+	}
+}
+
+static bool cli_proto_write(struct cli_state *state, unsigned int repeat, uint8_t val)
+{
+	if (cli_modes[state->mode].write) {
+		tty_printf(state->tty, "WRITE: ");
+		while (repeat--)
+			cli_modes[state->mode].write(state, val);
+		tty_printf(state->tty, "\r\n");
+		return true;
+	} else {
+		return cli_proto_null(state);
+	}
+}
+
+/*
+ * Command line processing functions
+ */
+
+static unsigned int cli_parse_repeat(const char **cmd, unsigned int *len)
 {
 	unsigned int repeat, pos;
 
@@ -144,45 +223,79 @@ static int cli_parse_repeat(const char **cmd, unsigned int *len)
 static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned int len)
 {
 	unsigned int repeat, pos;
+	uint8_t val;
+	bool ok;
 
 	pos = 0;
 	while (len > 0) {
+		ok = true;
 		len--;
 		pos++;
 		switch (*(cmd++)) {
 		case ' ':
+		case ',':
 			/* Ignore */
 			break;
 		case '?':
-			cli_help(state);
+			ok = cli_help(state);
 			break;
 		case '#':
-			cli_reset(state);
+			ok = cli_reset(state);
 			break;
 		case '&':
 			repeat = cli_parse_repeat(&cmd, &len);
-			cli_delay(state, false, repeat);
+			ok = cli_delay(state, false, repeat);
 			break;
 		case '%':
 			repeat = cli_parse_repeat(&cmd, &len);
-			cli_delay(state, true, repeat);
+			ok = cli_delay(state, true, repeat);
+			break;
+		case '[':
+		case '{':
+			ok = cli_proto_start(state);
+			break;
+		case ']':
+		case '}':
+			ok = cli_proto_stop(state);
 			break;
 		case '@':
-			cli_aux_read(state);
+			ok = cli_aux_read(state);
 			break;
 		case 'a':
-			cli_aux_set(state, false);
+			ok = cli_aux_set(state, false);
 			break;
 		case 'A':
-			cli_aux_set(state, true);
+			ok = cli_aux_set(state, true);
 			break;
 		case 'i':
-			cli_banner(state);
+			ok = cli_banner(state);
+			break;
+		case 'r':
+			repeat = cli_parse_repeat(&cmd, &len);
+			ok = cli_proto_read(state, repeat);
 			break;
 		case 'v':
-			cli_states(state);
+			ok = cli_states(state);
+			break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			val = strtoul(cmd - 1, (char **) &cmd, 10);
+			repeat = cli_parse_repeat(&cmd, &len);
+			ok = cli_proto_write(state, repeat, val);
 			break;
 		default:
+			ok = false;
+		}
+
+		if (!ok) {
 			tty_printf(state->tty, "Syntax error at char ");
 			tty_printdec(state->tty, pos);
 			tty_printf(state->tty, "\r\n");
@@ -206,7 +319,7 @@ void cli_main(struct cdc *tty, const char *s, int len)
 	cli_banner(&state);
 
 	while (1) {
-		tty_printf(tty, cli_mode_str[state.mode]);
+		tty_printf(tty, cli_modes[state.mode].name);
 		tty_printf(tty, ">");
 		cmd_len = tty_readline(tty, cmd, sizeof(cmd));
 		/* Process cmd */
