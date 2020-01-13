@@ -21,6 +21,7 @@
 
 enum cli_mode {
 	MODE_HIZ = 0,
+	MODE_1WIRE,
 	MODE_MAX
 };
 
@@ -31,12 +32,14 @@ struct cli_state {
 
 const struct cli_mode_info {
 	char *name;
+	void (*setup)(struct cli_state *);
 	void (*start)(struct cli_state *);
 	void (*stop)(struct cli_state *);
 	void (*read)(struct cli_state *);
 	void (*write)(struct cli_state *, uint8_t val);
 } cli_modes[] = {
 	{ .name = "HiZ" },
+	{ .name = "1-Wire" },
 };
 
 static bool cli_aux_read(struct cli_state *state)
@@ -97,6 +100,38 @@ static bool cli_help(struct cli_state *state)
 	tty_printf(state->tty, "a/A/@  Set AUX low/HI/read value\r\n");
 	tty_printf(state->tty, "i      Version/status info\r\n");
 	tty_printf(state->tty, "v      Show volts/states\r\n");
+
+	return true;
+}
+
+static bool cli_mode(struct cli_state *state)
+{
+	int i;
+	char opt;
+	int len;
+
+	for (i = 0; i < MODE_MAX; i++) {
+		tty_printdec(state->tty, i + 1);
+		tty_printf(state->tty, ". ");
+		tty_printf(state->tty, cli_modes[i].name);
+		tty_printf(state->tty, "\r\n");
+	}
+
+	while (true) {
+		tty_printf(state->tty, "(1)>");
+		opt = '1';
+		len = tty_readline(state->tty, &opt, 2);
+		if (len < 0 || opt == 'x' || opt == 'X' ) {
+			break;
+		} else if (!isdigit(opt) || opt < '1' || opt > ('0' + MODE_MAX)) {
+			tty_printf(state->tty, "Invalid choice, try again.\r\n");
+		} else {
+			state->mode = opt - '1';
+			if (cli_modes[state->mode].setup)
+				cli_modes[state->mode].setup(state);
+			break;
+		}
+	}
 
 	return true;
 }
@@ -269,6 +304,9 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 			break;
 		case 'i':
 			ok = cli_banner(state);
+			break;
+		case 'm':
+			ok = cli_mode(state);
 			break;
 		case 'r':
 			repeat = cli_parse_repeat(&cmd, &len);
