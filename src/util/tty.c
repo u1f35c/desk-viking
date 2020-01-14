@@ -21,6 +21,23 @@ void tty_putc(struct cdc *tty, const char c)
 	cdc_send(tty, &c, 1);
 }
 
+void tty_printbin(struct cdc *tty, int val)
+{
+	char buf[11];
+	int i;
+
+	buf[0] = '0';
+	buf[1] = 'b';
+	buf[10] = 0;
+
+	for (i = 0; i < 8; i++) {
+		buf[i + 2] = (val & 0x80) ? '1' : '0';
+		val <<= 1;
+	}
+
+	tty_printf(tty, buf);
+}
+
 void tty_printdec(struct cdc *tty, int val)
 {
 	char buf[6];
@@ -40,6 +57,40 @@ void tty_printdec(struct cdc *tty, int val)
 	}
 	buf[pos++] = val + '0';
 	buf[pos] = 0;
+
+	tty_printf(tty, buf);
+}
+
+void tty_printhex(struct cdc *tty, unsigned int val, int places)
+{
+	char buf[7];
+
+	if (places == 0) {
+		if (val > 0xFFF) {
+			places = 4;
+		} if (val > 0xFF) {
+			places = 3;
+		} if (val > 0xF) {
+			places = 2;
+		} else {
+			places = 1;
+		}
+	}
+
+	buf[0] = '0';
+	buf[1] = 'x';
+	places += 2;
+	buf[places] = 0;
+
+	while (places > 2) {
+		--places;
+		if ((val & 0xF) > 9) {
+			buf[places] = (val & 0xF) - 10 + 'A';
+		} else {
+			buf[places] = (val & 0xF) + '0';
+		}
+		val >>= 4;
+	}
 
 	tty_printf(tty, buf);
 }
