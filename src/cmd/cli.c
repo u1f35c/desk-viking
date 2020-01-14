@@ -258,6 +258,7 @@ static unsigned int cli_parse_repeat(const char **cmd, unsigned int *len)
 static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned int len)
 {
 	unsigned int repeat, pos;
+	char *end;
 	uint8_t val;
 	bool ok;
 
@@ -325,9 +326,11 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 		case '7':
 		case '8':
 		case '9':
-			val = strtoul(cmd - 1, (char **) &cmd, 10);
+			val = strtoul(cmd - 1, &end, 0);
 			repeat = cli_parse_repeat(&cmd, &len);
 			ok = cli_proto_write(state, repeat, val);
+			len -= end - cmd;
+			cmd = end;
 			break;
 		default:
 			ok = false;
