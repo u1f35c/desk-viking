@@ -5,7 +5,8 @@ PROJECT = desk-viking
 CHOPSTX ?= ../chopstx
 LDSCRIPT = desk-viking.ld
 CSRC = src/main.c \
-       src/cmd/cli.c \
+       src/cmd/cli.c src/cmd/cli_w1.c \
+       src/proto/w1.c \
        src/util/debug.c src/util/dwt.c src/util/gpio.c src/util/tty.c \
        src/util/usb-cdc.c
 

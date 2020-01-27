@@ -19,16 +19,7 @@
 #include "gpio.h"
 #include "tty.h"
 
-enum cli_mode {
-	MODE_HIZ = 0,
-	MODE_1WIRE,
-	MODE_MAX
-};
-
-struct cli_state {
-	struct cdc *tty;
-	enum cli_mode mode;
-};
+#include "cli.h"
 
 const struct cli_mode_info {
 	char *name;
@@ -39,7 +30,13 @@ const struct cli_mode_info {
 	void (*write)(struct cli_state *, uint8_t val);
 } cli_modes[] = {
 	{ .name = "HiZ" },
-	{ .name = "1-Wire" },
+	{
+		.name = "1-Wire",
+		.setup = cli_w1_setup,
+		.start = cli_w1_start,
+		.read = cli_w1_read,
+		.write = cli_w1_write,
+	},
 };
 
 static bool cli_aux_read(struct cli_state *state)
