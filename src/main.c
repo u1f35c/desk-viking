@@ -15,6 +15,7 @@
 
 #include "cdc.h"
 #include "debug.h"
+#include "dwt.h"
 
 #define PRIO_CDC 2
 
@@ -47,6 +48,7 @@ int main(int argc, const char *argv[])
 	(void)argv;
 
 	chopstx_usec_wait(200*1000);
+	dwt_init();
 
 	/* Setup our USB CDC ACM devices */
 	cdc_init(PRIO_CDC, STACK_ADDR_CDC, STACK_SIZE_CDC, NULL, NULL);
