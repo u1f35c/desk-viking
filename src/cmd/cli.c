@@ -21,6 +21,8 @@
 
 #include "cli.h"
 
+static void cli_hiz_setup(struct cli_state *state);
+
 const struct cli_mode_info {
 	char *name;
 	void (*setup)(struct cli_state *);
@@ -29,7 +31,10 @@ const struct cli_mode_info {
 	void (*read)(struct cli_state *);
 	void (*write)(struct cli_state *, uint8_t val);
 } cli_modes[] = {
-	{ .name = "HiZ" },
+	{
+		.name = "HiZ",
+		.setup = cli_hiz_setup,
+	},
 	{
 		.name = "1-Wire",
 		.setup = cli_w1_setup,
@@ -38,6 +43,17 @@ const struct cli_mode_info {
 		.write = cli_w1_write,
 	},
 };
+
+static void cli_hiz_setup(struct cli_state *state)
+{
+	(void)state;
+	/* Reset everything back to input */
+	gpio_set_direction(PIN_AUX, true);
+	gpio_set_direction(PIN_CLK, true);
+	gpio_set_direction(PIN_CS, true);
+	gpio_set_direction(PIN_MISO, true);
+	gpio_set_direction(PIN_MOSI, true);
+}
 
 static bool cli_aux_read(struct cli_state *state)
 {
@@ -148,6 +164,7 @@ static bool cli_reset(struct cli_state *state)
 	tty_printf(state->tty, "RESET\r\n\r\n");
 	state->mode = MODE_HIZ;
 	/* TODO: Reset back to all inputs */
+	cli_hiz_setup(state);
 	return cli_banner(state);
 }
 
@@ -363,6 +380,7 @@ void cli_main(struct cdc *tty, const char *s, int len)
 
 	state.tty = tty;
 	state.mode = MODE_HIZ;
+	cli_hiz_setup(&state);
 
 	cli_banner(&state);
 
