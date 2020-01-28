@@ -25,6 +25,7 @@
 
 bool gpio_get_direction(uint8_t gpio);
 void gpio_set_direction(uint8_t gpio, bool input);
+void gpio_set_opendrain(uint8_t gpio, bool open);
 bool gpio_get(uint8_t gpio);
 void gpio_set(uint8_t gpio, bool on);
 

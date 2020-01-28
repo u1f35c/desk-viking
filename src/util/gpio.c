@@ -61,6 +61,33 @@ void gpio_set_direction(uint8_t gpio, bool input)
 	}
 }
 
+void gpio_set_opendrain(uint8_t gpio, bool open)
+{
+	struct GPIO *bank = gpio_get_base(gpio);
+	uint32_t reg;
+	int shift;
+
+	if (!bank)
+		return;
+
+	reg = (gpio & 8) ? bank->CRH : bank->CRL;
+
+	/* 4 bits per GPIO */
+	shift = (gpio & 7) << 2;
+
+	if (open) {
+		reg |= (4 << shift);
+	} else {
+		reg &= ~(11 << shift);
+	}
+
+	if (gpio & 8) {
+		bank->CRH = reg;
+	} else {
+		bank->CRL = reg;
+	}
+}
+
 bool gpio_get_direction(uint8_t gpio)
 {
 	struct GPIO *bank = gpio_get_base(gpio);
