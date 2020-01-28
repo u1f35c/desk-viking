@@ -89,14 +89,24 @@ static bool cli_delay(struct cli_state *state, bool ms, unsigned int repeat)
 
 static bool cli_help(struct cli_state *state)
 {
-	tty_printf(state->tty, "General\r\n");
-	tty_printf(state->tty, "--------------------------------\r\n");
-	tty_printf(state->tty, "?      Help\r\n");
-	tty_printf(state->tty, "#      Reset CLI state\r\n");
-	tty_printf(state->tty, "&/%    Delay 1µs/ms\r\n");
-	tty_printf(state->tty, "a/A/@  Set AUX low/HI/read value\r\n");
-	tty_printf(state->tty, "i      Version/status info\r\n");
-	tty_printf(state->tty, "v      Show volts/states\r\n");
+	tty_printf(state->tty, " General                              "
+				"Protocol interaction\r\n");
+	tty_printf(state->tty, " -------------------------------------"
+				"-------------------------------------\r\n");
+	tty_printf(state->tty, " ?      Help                          "
+				"[/{    Start\r\n");
+	tty_printf(state->tty, " #      Reset CLI state               "
+				"]/}    Stop\r\n");
+	tty_printf(state->tty, " &/%    Delay 1µs/ms                  "
+				"123\r\n");
+	tty_printf(state->tty, " a/A/@  Set AUX low/HI/read value     "
+				"0x123  Send value\r\n");
+	tty_printf(state->tty, " i      Version/status info           "
+				"r      Read\r\n");
+	tty_printf(state->tty, " m      Change mode                   "
+				":      Repeat e.g. r:8\r\n");
+	tty_printf(state->tty, " v      Show volts/states             "
+				"\r\n");
 
 	return true;
 }
