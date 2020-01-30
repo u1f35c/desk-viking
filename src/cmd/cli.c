@@ -42,6 +42,14 @@ const struct cli_mode_info {
 		.read = cli_w1_read,
 		.write = cli_w1_write,
 	},
+	{
+		.name = "I2C",
+		.setup = cli_i2c_setup,
+		.start = cli_i2c_start,
+		.stop = cli_i2c_stop,
+		.read = cli_i2c_read,
+		.write = cli_i2c_write,
+	},
 };
 
 static void cli_hiz_setup(struct cli_state *state)
