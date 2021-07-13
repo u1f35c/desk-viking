@@ -2,6 +2,7 @@
 
 PROJECT = desk-viking
 
+ARCH = cortex-m
 CHOPSTX ?= ../chopstx
 LDSCRIPT = desk-viking.ld
 CSRC = src/main.c \
