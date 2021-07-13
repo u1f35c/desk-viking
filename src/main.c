@@ -94,6 +94,10 @@ int main(int argc, const char *argv[])
 				/* Interactive mode */
 				debug_print("Entering interactive mode.\r\n");
 				cli_main(tty, &s[4], size);
+			} else if (s[4] == 0xF0) {
+				/* CCLib Proxy mode */
+				debug_print("Entering CCLib proxy mode.\r\n");
+				ccproxy_main(tty, &s[4], size);
 			}
 		}
 	}
