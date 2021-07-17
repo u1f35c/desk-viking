@@ -11,6 +11,8 @@
 #ifndef __CCDBG_H__
 #define __CCDBG_H__
 
+#define CCDBG_INSTRLEN	16
+
 struct ccdbg_state;
 
 struct ccdbg_state *ccdbg_init(uint8_t rst, uint8_t dc, uint8_t dd);
@@ -29,6 +31,8 @@ uint8_t ccdbg_chiperase(struct ccdbg_state *ctx);
 uint8_t ccdbg_resume(struct ccdbg_state *ctx);
 uint8_t ccdbg_halt(struct ccdbg_state *ctx);
 uint8_t ccdbg_instrtblver(struct ccdbg_state *ctx);
+uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const char *buf, int ofs,
+		int len);
 uint16_t ccdbg_chipid(struct ccdbg_state *ctx);
 uint16_t ccdbg_getPC(struct ccdbg_state *ctx);
 

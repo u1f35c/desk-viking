@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <chopstx.h>
 
@@ -44,7 +45,7 @@
 
 struct ccdbg_state {
 	/* Instruction table */
-	uint8_t instr[16];
+	uint8_t instr[CCDBG_INSTRLEN];
 
 	/* IO pins */
 	uint8_t rst;
@@ -336,6 +337,18 @@ uint8_t ccdbg_writecfg(struct ccdbg_state *ctx, uint8_t c)
 
 uint8_t ccdbg_instrtblver(struct ccdbg_state *ctx)
 {
+	return ctx->instr[INSTR_VERSION];
+}
+
+uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const char *buf, int ofs, int len)
+{
+	if (ofs >= CCDBG_INSTRLEN)
+		return 0;
+	if (len > (CCDBG_INSTRLEN - ofs))
+		return 0;
+
+	memcpy(&ctx->instr[ofs], buf, len);
+
 	return ctx->instr[INSTR_VERSION];
 }
 

@@ -61,11 +61,12 @@ static void ccproxy_sendresp(struct cdc *tty, struct ccdbg_state *ctx,
 }
 
 static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
-		const char *cmd)
+		char *cmd)
 {
+	int read;
 	uint8_t ret;
+	uint8_t left;
 	uint16_t status;
-
 
 	switch (cmd[0]) {
 	case CMD_PING:
@@ -140,6 +141,25 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 		ccproxy_sendresp(tty, ctx, ret, 0);
 		break;
 	case CMD_INSTR_UPD:
+		debug_print("CCProxy: INSTR_UPD\r\n");
+		ccproxy_sendframe(tty, ANS_READY, 0, 0);
+
+		/* Read the next 16 bytes into our instruction table */
+		ret = 0;
+		left = CCDBG_INSTRLEN;
+		while (left > 0 && (read = cdc_recv(tty, cmd, NULL)) > 0) {
+			if (read > left)
+				read = left;
+
+			ret = ccdbg_updateinstr(ctx, cmd,
+					CCDBG_INSTRLEN - left, read);
+
+			left -= read;
+		}
+
+		/* Indicate success and return the new version */
+		ccproxy_sendframe(tty, ANS_OK, ret, 0);
+		break;
 	case CMD_BURSTWR:
 	default:
 		debug_print("CCProxy: Error\r\n");
