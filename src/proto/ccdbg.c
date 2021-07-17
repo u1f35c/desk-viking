@@ -57,7 +57,7 @@ struct ccdbg_state {
 	bool indebug;
 };
 
-static uint8_t ccdbg_read(struct ccdbg_state *ctx)
+static uint8_t ccdbg_read_int(struct ccdbg_state *ctx)
 {
 	uint8_t b, i;
 
@@ -86,7 +86,7 @@ static uint8_t ccdbg_read(struct ccdbg_state *ctx)
 	return b;
 }
 
-static bool ccdbg_write(struct ccdbg_state *ctx, uint8_t b)
+bool ccdbg_write(struct ccdbg_state *ctx, uint8_t b)
 {
 	int i;
 
@@ -185,18 +185,24 @@ static bool ccdbg_switchwrite(struct ccdbg_state *ctx)
 	return true;
 }
 
-static uint8_t ccdbg_do_cmd(struct ccdbg_state *ctx, int cmd)
+uint8_t ccdbg_read(struct ccdbg_state *ctx)
 {
 	uint8_t ret;
 
-	if (!ccdbg_write(ctx, ctx->instr[cmd]))
+	if (!ccdbg_switchread(ctx))
 		return 0;
-
-	ccdbg_switchread(ctx);
-	ret = ccdbg_read(ctx);
+	ret = ccdbg_read_int(ctx);
 	ccdbg_switchwrite(ctx);
 
 	return ret;
+}
+
+static uint8_t ccdbg_do_cmd(struct ccdbg_state *ctx, int cmd)
+{
+	if (!ccdbg_write(ctx, ctx->instr[cmd]))
+		return 0;
+
+	return ccdbg_read(ctx);
 }
 
 void ccdbg_enter(struct ccdbg_state *ctx)
@@ -266,24 +272,16 @@ uint8_t ccdbg_step(struct ccdbg_state *ctx)
 
 uint8_t ccdbg_exec1(struct ccdbg_state *ctx, uint8_t c)
 {
-	uint8_t ret;
-
 	if (!ccdbg_write(ctx, ctx->instr[I_DEBUG_INSTR_1]))
 		return 0;
 	if (!ccdbg_write(ctx, c))
 		return 0;
 
-	ccdbg_switchread(ctx);
-	ret = ccdbg_read(ctx);
-	ccdbg_switchwrite(ctx);
-
-	return ret;
+	return ccdbg_read(ctx);
 }
 
 uint8_t ccdbg_exec2(struct ccdbg_state *ctx, uint8_t c1, uint8_t c2)
 {
-	uint8_t ret;
-
 	if (!ccdbg_write(ctx, ctx->instr[I_DEBUG_INSTR_2]))
 		return 0;
 	if (!ccdbg_write(ctx, c1))
@@ -291,18 +289,12 @@ uint8_t ccdbg_exec2(struct ccdbg_state *ctx, uint8_t c1, uint8_t c2)
 	if (!ccdbg_write(ctx, c2))
 		return 0;
 
-	ccdbg_switchread(ctx);
-	ret = ccdbg_read(ctx);
-	ccdbg_switchwrite(ctx);
-
-	return ret;
+	return ccdbg_read(ctx);
 }
 
 uint8_t ccdbg_exec3(struct ccdbg_state *ctx, uint8_t c1, uint8_t c2,
 		uint8_t c3)
 {
-	uint8_t ret;
-
 	if (!ccdbg_write(ctx, ctx->instr[I_DEBUG_INSTR_3]))
 		return 0;
 	if (!ccdbg_write(ctx, c1))
@@ -312,27 +304,17 @@ uint8_t ccdbg_exec3(struct ccdbg_state *ctx, uint8_t c1, uint8_t c2,
 	if (!ccdbg_write(ctx, c3))
 		return 0;
 
-	ccdbg_switchread(ctx);
-	ret = ccdbg_read(ctx);
-	ccdbg_switchwrite(ctx);
-
-	return ret;
+	return ccdbg_read(ctx);
 }
 
 uint8_t ccdbg_writecfg(struct ccdbg_state *ctx, uint8_t c)
 {
-	uint8_t ret;
-
 	if (!ccdbg_write(ctx, ctx->instr[I_WR_CONFIG]))
 		return 0;
 	if (!ccdbg_write(ctx, c))
 		return 0;
 
-	ccdbg_switchread(ctx);
-	ret = ccdbg_read(ctx);
-	ccdbg_switchwrite(ctx);
-
-	return ret;
+	return ccdbg_read(ctx);
 }
 
 uint8_t ccdbg_instrtblver(struct ccdbg_state *ctx)
@@ -360,9 +342,9 @@ uint16_t ccdbg_chipid(struct ccdbg_state *ctx)
 		return 0;
 
 	ccdbg_switchread(ctx);
-	chipid = ccdbg_read(ctx);
+	chipid = ccdbg_read_int(ctx);
 	chipid <<= 8;
-	chipid |= ccdbg_read(ctx);
+	chipid |= ccdbg_read_int(ctx);
 	ccdbg_switchwrite(ctx);
 
 	return chipid;
@@ -376,9 +358,9 @@ uint16_t ccdbg_getPC(struct ccdbg_state *ctx)
 		return 0;
 
 	ccdbg_switchread(ctx);
-	pc = ccdbg_read(ctx);
+	pc = ccdbg_read_int(ctx);
 	pc <<= 8;
-	pc |= ccdbg_read(ctx);
+	pc |= ccdbg_read_int(ctx);
 	ccdbg_switchwrite(ctx);
 
 	return pc;

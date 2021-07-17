@@ -19,6 +19,8 @@ struct ccdbg_state *ccdbg_init(uint8_t rst, uint8_t dc, uint8_t dd);
 void ccdbg_enter(struct ccdbg_state *ctx);
 void ccdbg_exit(struct ccdbg_state *ctx);
 uint8_t ccdbg_error(struct ccdbg_state *ctx);
+uint8_t ccdbg_read(struct ccdbg_state *ctx);
+bool ccdbg_write(struct ccdbg_state *ctx, uint8_t b);
 uint8_t ccdbg_status(struct ccdbg_state *ctx);
 uint8_t ccdbg_step(struct ccdbg_state *ctx);
 uint8_t ccdbg_exec1(struct ccdbg_state *ctx, uint8_t c);
