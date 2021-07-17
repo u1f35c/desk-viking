@@ -341,7 +341,8 @@ uint16_t ccdbg_chipid(struct ccdbg_state *ctx)
 	if (!ccdbg_write(ctx, ctx->instr[I_GET_CHIP_ID]))
 		return 0;
 
-	ccdbg_switchread(ctx);
+	if (!ccdbg_switchread(ctx))
+		return 0;
 	chipid = ccdbg_read_int(ctx);
 	chipid <<= 8;
 	chipid |= ccdbg_read_int(ctx);
