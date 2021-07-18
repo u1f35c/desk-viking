@@ -377,7 +377,7 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 	}
 }
 
-void cli_main(struct cdc *tty, const char *s, int len)
+bool cli_main(struct cdc *tty, const char *s, int len)
 {
 	struct cli_state state;
 	char cmd[65];
@@ -407,4 +407,5 @@ void cli_main(struct cdc *tty, const char *s, int len)
 	}
 
 	debug_print("Leaving interactive mode.\r\n");
+	return (cmd_len == TTY_BPRAW);
 }

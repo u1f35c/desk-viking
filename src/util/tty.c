@@ -109,7 +109,7 @@ int tty_readline(struct cdc *tty, char *line, int linesize)
 		size = cdc_recv(tty, buf, &timeout);
 
 		if (size < 0)
-			return -1;
+			return TTY_DISCONNECTED;
 
 		if (size > 0) {
 			for (i = 0; i < size; i++) {
@@ -135,6 +135,20 @@ int tty_readline(struct cdc *tty, char *line, int linesize)
 					break;
 				}
 			}
+		}
+
+		/* 20 NULs in a row means drop to raw mode */
+		if (len >= 20) {
+			bool doraw = true;
+
+			for (i = len-20; i < len; i++) {
+				if (line[i] != 0) {
+					doraw = false;
+					break;
+				}
+			}
+			if (doraw)
+				return TTY_BPRAW;
 		}
 	}
 

@@ -11,6 +11,9 @@
 
 #include "cdc.h"
 
+#define TTY_DISCONNECTED	(-1)
+#define TTY_BPRAW		(-2)
+
 void tty_printf(struct cdc *tty, const char *str);
 void tty_putc(struct cdc *tty, const char c);
 void tty_printbin(struct cdc *tty, int val);

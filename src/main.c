@@ -36,13 +36,16 @@ static char hexchar (uint8_t x)
 		return '?';
 }
 
-void cli_main(struct cdc *tty, const char *s, int len);
+bool bpraw_main(struct cdc *tty);
+bool cli_main(struct cdc *tty, const char *s, int len);
 void ccproxy_main(struct cdc *tty, const char *s, int len);
 
 int main(int argc, const char *argv[])
 {
+	unsigned int zerocnt;
 	struct cdc *tty;
 	uint8_t count;
+	uint8_t i;
 
 	(void)argc;
 	(void)argv;
@@ -80,6 +83,7 @@ int main(int argc, const char *argv[])
 
 		debug_print(s);
 
+		zerocnt = 0;
 		while (1) {
 			int size;
 			uint32_t usec;
@@ -90,14 +94,44 @@ int main(int argc, const char *argv[])
 			if (size < 0)
 				break;
 
-			if (s[4] == '\r') {
-				/* Interactive mode */
-				debug_print("Entering interactive mode.\r\n");
-				cli_main(tty, &s[4], size);
-			} else if (s[4] == 0xF0) {
+			if (s[4] == 0xF0) {
 				/* CCLib Proxy mode */
 				debug_print("Entering CCLib proxy mode.\r\n");
 				ccproxy_main(tty, &s[4], size);
+			} else {
+				/* Bus Pirate modes; 1 == cli, 2 == raw, 0 == ignore */
+				int mode = 0;
+
+				if (s[4] == '\r') {
+					/* Bus Pirate-like CLI if user hits enter */
+					zerocnt = 0;
+					mode = 1; /* Interactive */
+				} else if (s[4] == 0) {
+					/* Bus Pirate raw mode after 20 NULs */
+					for (i = 0; i < size && zerocnt < 20; i++) {
+						if (s[i + 4] == 0) {
+							zerocnt++;
+						} else {
+							zerocnt = 0;
+						}
+					}
+					if (zerocnt == 20) {
+						mode = 2; /* Raw */
+						zerocnt = 0;
+					}
+				} else {
+					zerocnt = 0;
+				}
+
+				while (mode != 0) {
+					if (mode == 1) {
+						debug_print("Entering interactive mode.\r\n");
+						mode = cli_main(tty, &s[4], size) ? 2 : 0;
+					} else if (mode == 2) {
+						debug_print("Entering Bus Pirate raw mode.\r\n");
+						mode = bpraw_main(tty) ? 1 : 0;
+					}
+				}
 			}
 		}
 	}
