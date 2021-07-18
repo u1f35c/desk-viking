@@ -63,9 +63,8 @@ static void ccproxy_sendresp(struct cdc *tty, struct ccdbg_state *ctx,
 static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 		char *cmd)
 {
-	int read;
 	uint8_t ret;
-	uint8_t left;
+	int left, read;
 	uint16_t status;
 
 	switch (cmd[0]) {
@@ -161,6 +160,45 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 		ccproxy_sendframe(tty, ANS_OK, ret, 0);
 		break;
 	case CMD_BURSTWR:
+		left = cmd[1] << 8 | cmd[2];
+
+		if (left > 2048) {
+			ccproxy_sendframe(tty, ANS_ERROR, 3, 0);
+			break;
+		}
+
+		ccproxy_sendframe(tty, ANS_READY, 0, 0);
+
+		/* Setup burst write */
+		if (!ccdbg_write(ctx, 0x80 | (cmd[1] & 7))) {
+			ccproxy_sendresp(tty, ctx, 0, 0);
+			return;
+		}
+		if (!ccdbg_write(ctx, cmd[2])) {
+			ccproxy_sendresp(tty, ctx, 0, 0);
+			return;
+		}
+
+		while (left > 0) {
+			read = cdc_recv(tty, cmd, NULL);
+			if (read < 0)
+				return;
+			if (read > left)
+				read = left;
+
+			for (int i = 0; i < read; i++) {
+				if (!ccdbg_write(ctx, cmd[i])) {
+					ccproxy_sendresp(tty, ctx, 0, 0);
+					return;
+				}
+			}
+
+			left -= read;
+		}
+
+		ret = ccdbg_read(ctx);
+		ccproxy_sendresp(tty, ctx, ret, 0);
+		break;
 	default:
 		debug_print("CCProxy: Error\r\n");
 		ccproxy_sendframe(tty, ANS_ERROR, 0xFF, 0);
