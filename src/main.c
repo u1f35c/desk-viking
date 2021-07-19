@@ -36,7 +36,7 @@ static char hexchar (uint8_t x)
 		return '?';
 }
 
-bool bpraw_main(struct cdc *tty);
+bool bpbin_main(struct cdc *tty);
 bool cli_main(struct cdc *tty, const char *s, int len);
 void ccproxy_main(struct cdc *tty, const char *s, int len);
 
@@ -129,7 +129,7 @@ int main(int argc, const char *argv[])
 						mode = cli_main(tty, &s[4], size) ? 2 : 0;
 					} else if (mode == 2) {
 						debug_print("Entering Bus Pirate raw mode.\r\n");
-						mode = bpraw_main(tty) ? 1 : 0;
+						mode = bpbin_main(tty) ? 1 : 0;
 					}
 				}
 			}

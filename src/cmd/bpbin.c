@@ -11,12 +11,12 @@
 #include "debug.h"
 #include "gpio.h"
 
-static void bpraw_send_bbio1(struct cdc *tty)
+static void bpbin_send_bbio1(struct cdc *tty)
 {
 	cdc_send(tty, "BBIO1", 5);
 }
 
-static uint8_t bpraw_read_state(void)
+static uint8_t bpbin_read_state(void)
 {
 	uint8_t resp;
 
@@ -29,7 +29,7 @@ static uint8_t bpraw_read_state(void)
 	return resp;
 }
 
-static uint8_t bpraw_selftest(struct cdc *tty, char *buf, bool quick)
+static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
 {
 	uint8_t resp;
 	int i, len;
@@ -52,13 +52,13 @@ static uint8_t bpraw_selftest(struct cdc *tty, char *buf, bool quick)
 	return 0;
 }
 
-bool bpraw_main(struct cdc *tty)
+bool bpbin_main(struct cdc *tty)
 {
 	char buf[64];
 	int i, len;
 	uint8_t resp;
 
-	bpraw_send_bbio1(tty);
+	bpbin_send_bbio1(tty);
 
 	while (1) {
 		len = cdc_recv(tty, buf, NULL);
@@ -69,7 +69,7 @@ bool bpraw_main(struct cdc *tty)
 			if (buf[i] & 0x80) {
 				/* Set/get pin status */
 
-				resp = 0x80 | bpraw_read_state();
+				resp = 0x80 | bpbin_read_state();
 
 				/*
 				 * Not yet implemented.
@@ -91,12 +91,12 @@ bool bpraw_main(struct cdc *tty)
 				gpio_set_direction(PIN_MISO, buf[i] & 0x2);
 				gpio_set_direction(PIN_CS, buf[i] & 0x1);
 
-				resp = 0x40 | bpraw_read_state();
+				resp = 0x40 | bpbin_read_state();
 				cdc_send(tty, (char *) &resp, 1);
 			} else {
 				switch(buf[i]) {
 				case 0:
-					bpraw_send_bbio1(tty);
+					bpbin_send_bbio1(tty);
 					break;
 				case 1:
 					/* SPI */
@@ -129,7 +129,7 @@ bool bpraw_main(struct cdc *tty)
 				case 0x11:
 					/* Self test mode */
 					len = 0;
-					resp = bpraw_selftest(tty, buf, buf[i] & 1);
+					resp = bpbin_selftest(tty, buf, buf[i] & 1);
 					cdc_send(tty, (char *) &resp, 1);
 					break;
 				default:
