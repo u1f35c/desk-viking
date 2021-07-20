@@ -7,9 +7,34 @@
  * Copyright 2021 Jonathan McDowell <noodles@earth.li>
  */
 
+#include "bpbin.h"
 #include "cdc.h"
 #include "debug.h"
 #include "gpio.h"
+
+void bpbin_cfg_pins(uint8_t cfg) {
+	/* Power */
+
+	/* Pull ups */
+
+	/* AUX */
+	gpio_set(PIN_AUX, (cfg & 2));
+
+	/* CS */
+	gpio_set(PIN_CS, (cfg & 1));
+}
+
+void bpbin_err(struct cdc *tty)
+{
+	char resp = 0;
+	cdc_send(tty, &resp, 1);
+}
+
+void bpbin_ok(struct cdc *tty)
+{
+	char resp = 1;
+	cdc_send(tty, &resp, 1);
+}
 
 static void bpbin_send_bbio1(struct cdc *tty)
 {
@@ -31,13 +56,10 @@ static uint8_t bpbin_read_state(void)
 
 static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
 {
-	uint8_t resp;
 	int i, len;
 
-	resp = 0;
-
 	/* Fake all tests ok */
-	cdc_send(tty, (char *) &resp, 1);
+	bpbin_ok(tty);
 
 	while ((len = cdc_recv(tty, buf, NULL)) >= 0) {
 		for (i = 0; i < len; i++) {
@@ -45,7 +67,7 @@ static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
 				return 1;
 
 			/* Fake all tests ok */
-			cdc_send(tty, (char *) &resp, 1);
+			bpbin_ok(tty);
 		}
 	}
 
@@ -106,6 +128,9 @@ bool bpbin_main(struct cdc *tty)
 					/* UART */
 				case 4:
 					/* 1-Wire */
+					bpbin_w1(tty, buf);
+					bpbin_send_bbio1(tty);
+					break;
 				case 5:
 					/* Raw */
 				case 6:
@@ -121,8 +146,7 @@ bool bpbin_main(struct cdc *tty)
 					/* Unused */
 					break;
 				case 0xF:
-					resp = 1;
-					cdc_send(tty, (char *) &resp, 1);
+					bpbin_ok(tty);
 					/* Flag we want to drop to the CLI */
 					return true;
 				case 0x10:
