@@ -124,6 +124,9 @@ bool bpbin_main(struct cdc *tty)
 					/* SPI */
 				case 2:
 					/* I2C */
+					bpbin_i2c(tty, buf);
+					bpbin_send_bbio1(tty);
+					break;
 				case 3:
 					/* UART */
 				case 4:
