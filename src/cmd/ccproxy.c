@@ -32,6 +32,7 @@
 #define CMD_PING	0xF0
 #define CMD_INSTR_VER	0xF1
 #define CMD_INSTR_UPD	0xF2
+#define CMD_BURSTRD	0xF3
 
 /* Response codes, as per CCLib */
 #define ANS_OK		1
@@ -197,6 +198,34 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 		}
 
 		ret = ccdbg_read(ctx);
+		ccproxy_sendresp(tty, ctx, ret, 0);
+		break;
+	case CMD_BURSTRD:
+		left = cmd[1] << 8 | cmd[2];
+
+		if (left > 2048) {
+			ccproxy_sendframe(tty, ANS_ERROR, 3, 0);
+			return;
+		}
+
+		ccproxy_sendframe(tty, ANS_READY, 0, 0);
+
+		while (left > 0) {
+			read = (left > BUFSIZE) ? BUFSIZE : left;
+
+			for (int i = 0; i < read; i++) {
+				/* MOVX A, @DPTR */
+				cmd[i] = ccdbg_exec1(ctx, 0xE0);
+				/* INC DPTR */
+				ccdbg_exec1(ctx, 0xA3);
+			}
+
+			if (cdc_send(tty, cmd, read) < 0)
+				return;
+			left -= read;
+		}
+
+		ret = ccdbg_readcfg(ctx);
 		ccproxy_sendresp(tty, ctx, ret, 0);
 		break;
 	default:
