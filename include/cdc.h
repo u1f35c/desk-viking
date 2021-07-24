@@ -14,7 +14,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define BUFSIZE 64
+/* This is the size of the buffer we use for our CDC transactions */
+#define CDC_BUFSIZE	64
 
 struct cdc;
 

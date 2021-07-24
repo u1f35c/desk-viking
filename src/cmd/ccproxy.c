@@ -211,7 +211,7 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 		ccproxy_sendframe(tty, ANS_READY, 0, 0);
 
 		while (left > 0) {
-			read = (left > BUFSIZE) ? BUFSIZE : left;
+			read = (left > CDC_BUFSIZE) ? CDC_BUFSIZE : left;
 
 			for (int i = 0; i < read; i++) {
 				/* MOVX A, @DPTR */
@@ -236,7 +236,7 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 
 void ccproxy_main(struct cdc *tty, const char *s, int len)
 {
-	char buf[64];
+	char buf[CDC_BUFSIZE];
 	int cur_len, i, ret;
 	struct ccdbg_state *ctx;
 

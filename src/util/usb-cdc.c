@@ -41,7 +41,7 @@ struct cdc {
 	chopstx_mutex_t mtx;
 	chopstx_cond_t cnd_rx;
 	chopstx_cond_t cnd_tx;
-	uint8_t input[BUFSIZE];
+	uint8_t input[CDC_BUFSIZE];
 	uint32_t input_len        : 7;
 	uint32_t flag_connected   : 1;
 	uint32_t flag_output_ready: 1;
@@ -308,7 +308,7 @@ static void usb_device_reset(struct usb_dev *dev)
 
 	/* Initialize Endpoint 0 */
 	usb_lld_setup_endpoint(ENDP0, EP_CONTROL, 0, ENDP0_RXADDR,
-			ENDP0_TXADDR, 64);
+			ENDP0_TXADDR, CDC_BUFSIZE);
 
 	device_state = USB_DEVICE_STATE_ATTACHED;
 	for (i = 0; i < MAX_CDC; i++) {
@@ -465,7 +465,8 @@ static void cdc_setup_endpoints_for_interface(uint16_t interface, int stop)
 	} else if (interface == 1) {
 		if (!stop) {
 			usb_lld_setup_endpoint(s->bulk_ep, EP_BULK, 0,
-					ENDP2_RXADDR, ENDP2_TXADDR, 64);
+					ENDP2_RXADDR, ENDP2_TXADDR,
+					CDC_BUFSIZE);
 			/* Start with no data receiving (ENDP2 not enabled)*/
 		} else {
 			usb_lld_stall_tx(s->bulk_ep);
@@ -480,7 +481,8 @@ static void cdc_setup_endpoints_for_interface(uint16_t interface, int stop)
 	} else if (interface == 3) {
 		if (!stop) {
 			usb_lld_setup_endpoint(s->bulk_ep, EP_BULK, 0,
-					ENDP4_RXADDR, ENDP4_TXADDR, 64);
+					ENDP4_RXADDR, ENDP4_TXADDR,
+					CDC_BUFSIZE);
 			/* Start with no data receiving (ENDP4 not enabled)*/
 		} else {
 			usb_lld_stall_tx(s->bulk_ep);
@@ -833,7 +835,7 @@ int cdc_send(struct cdc *s, const char *buf, int len)
 	int count;
 
 	p = buf;
-	count = len >= 64 ? 64 : len;
+	count = len >= CDC_BUFSIZE ? CDC_BUFSIZE : len;
 
 	while (1) {
 		chopstx_mutex_lock(&s->mtx);
@@ -848,13 +850,13 @@ int cdc_send(struct cdc *s, const char *buf, int len)
 
 		len -= count;
 		p += count;
-		if (len == 0 && count != 64)
+		if (len == 0 && count != CDC_BUFSIZE)
 		/*
 		 * The size of the last packet should be != 0
-		 * If 64, send ZLP (zelo length packet)
+		 * If 64 (CDC_BUFSIZE), send ZLP (zelo length packet)
 		 */
 			break;
-		count = len >= 64 ? 64 : len;
+		count = len >= CDC_BUFSIZE ? CDC_BUFSIZE : len;
 	}
 
 	return r;

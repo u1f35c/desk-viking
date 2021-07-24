@@ -76,7 +76,7 @@ static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
 
 bool bpbin_main(struct cdc *tty)
 {
-	char buf[64];
+	char buf[CDC_BUFSIZE];
 	int i, len;
 	uint8_t resp;
 
