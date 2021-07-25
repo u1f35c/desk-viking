@@ -128,7 +128,7 @@ int main(int argc, const char *argv[])
 						debug_print("Entering interactive mode.\r\n");
 						mode = cli_main(tty, &s[4], size) ? 2 : 0;
 					} else if (mode == 2) {
-						debug_print("Entering Bus Pirate raw mode.\r\n");
+						debug_print("Entering Bus Pirate binary mode.\r\n");
 						mode = bpbin_main(tty) ? 1 : 0;
 					}
 				}

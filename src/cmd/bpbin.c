@@ -124,6 +124,7 @@ bool bpbin_main(struct cdc *tty)
 					/* SPI */
 				case 2:
 					/* I2C */
+					debug_print("Entering Bus Pirate binary I2C mode.\r\n");
 					bpbin_i2c(tty, buf);
 					bpbin_send_bbio1(tty);
 					break;
@@ -131,6 +132,7 @@ bool bpbin_main(struct cdc *tty)
 					/* UART */
 				case 4:
 					/* 1-Wire */
+					debug_print("Entering Bus Pirate binary 1-Wire mode.\r\n");
 					bpbin_w1(tty, buf);
 					bpbin_send_bbio1(tty);
 					break;
