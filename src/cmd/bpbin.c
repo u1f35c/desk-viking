@@ -24,6 +24,36 @@ void bpbin_cfg_pins(uint8_t cfg) {
 	gpio_set(PIN_CS, (cfg & 1));
 }
 
+void bpbin_set_direction(uint8_t state)
+{
+	/* Configure pins as input/output */
+	if (state & 0x10) {
+		gpio_set_input(PIN_AUX);
+	} else {
+		gpio_set_output(PIN_AUX, false);
+	}
+	if (state & 0x8) {
+		gpio_set_input(PIN_MOSI);
+	} else {
+		gpio_set_output(PIN_MOSI, false);
+	}
+	if (state & 0x4) {
+		gpio_set_input(PIN_CLK);
+	} else {
+		gpio_set_output(PIN_CLK, false);
+	}
+	if (state & 0x2) {
+		gpio_set_input(PIN_MISO);
+	} else {
+		gpio_set_output(PIN_MISO, false);
+	}
+	if (state & 0x1) {
+		gpio_set_input(PIN_CS);
+	} else {
+		gpio_set_output(PIN_CS, false);
+	}
+}
+
 void bpbin_err(struct cdc *tty)
 {
 	char resp = 0;
@@ -107,11 +137,7 @@ bool bpbin_main(struct cdc *tty)
 				cdc_send(tty, (char *) &resp, 1);
 			} else if ((buf[i] & 0xE0) == 0x40) {
 				/* Configure pins as input/output */
-				gpio_set_direction(PIN_AUX, buf[i] & 0x10);
-				gpio_set_direction(PIN_MOSI, buf[i] & 0x8);
-				gpio_set_direction(PIN_CLK, buf[i] & 0x4);
-				gpio_set_direction(PIN_MISO, buf[i] & 0x2);
-				gpio_set_direction(PIN_CS, buf[i] & 0x1);
+				bpbin_set_direction(buf[i]);
 
 				resp = 0x40 | bpbin_read_state();
 				cdc_send(tty, (char *) &resp, 1);

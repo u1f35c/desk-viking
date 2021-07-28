@@ -110,8 +110,6 @@ void i2c_init(uint8_t scl, uint8_t sda)
 	i2c_scl = scl;
 	i2c_sda = sda;
 	i2c_speed = 5; /* 100kHz */
-	gpio_set_direction(scl, false);
-	gpio_set_direction(sda, false);
-	gpio_set_opendrain(scl, true);
-	gpio_set_opendrain(sda, true);
+	gpio_set_output(scl, true);
+	gpio_set_output(sda, true);
 }

@@ -70,7 +70,7 @@ static uint8_t ccdbg_read_int(struct ccdbg_state *ctx)
 	 * Read data msb first
 	 * clk high, 2 ms, read state, clock low, 2ms
 	 */
-	gpio_set_direction(ctx->dd, true);
+	gpio_set_input(ctx->dd);
 	b = 0;
 	for (i = 0; i < 8; i++) {
 		/* Toggle clock and shift data in */
@@ -104,7 +104,7 @@ bool ccdbg_write(struct ccdbg_state *ctx, uint8_t b)
 	 * clock data out msb first
 	 *  clock high, 2ms, clock low, 2ms
 	 */
-	gpio_set_direction(ctx->dd, false);
+	gpio_set_output(ctx->dd, false);
 	for (i = 0; i < 8; i++) {
 		if (b & 0x80)
 			gpio_set(ctx->dd, true);
@@ -143,7 +143,7 @@ static bool ccdbg_switchread(struct ccdbg_state *ctx)
 	 *
 	 * Limit cycles to 255.
 	 */
-	gpio_set_direction(ctx->dd, true);
+	gpio_set_input(ctx->dd);
 	chopstx_usec_wait(2);
 	count = 255;
 	while (gpio_get(ctx->dd)) {
@@ -180,7 +180,7 @@ static bool ccdbg_switchwrite(struct ccdbg_state *ctx)
 	/*
 	 * Switch DD to output
 	 */
-	gpio_set_direction(ctx->dd, false);
+	gpio_set_output(ctx->dd, false);
 
 	return true;
 }
@@ -382,9 +382,9 @@ struct ccdbg_state *ccdbg_init(uint8_t rst, uint8_t dc, uint8_t dd)
 	 * Set rst/dc to output, dd to input
 	 * All low / no pull up
 	 */
-	gpio_set_direction(ctx->rst, false);
-	gpio_set_direction(ctx->dc, false);
-	gpio_set_direction(ctx->dd, true);
+	gpio_set_output(ctx->rst, false);
+	gpio_set_output(ctx->dc, false);
+	gpio_set_input(ctx->dd);
 
 	ctx->instr[INSTR_VERSION]    = 1;
 	ctx->instr[I_HALT]           = 0x40;

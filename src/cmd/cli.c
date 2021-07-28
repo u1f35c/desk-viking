@@ -56,17 +56,13 @@ static void cli_hiz_setup(struct cli_state *state)
 {
 	(void)state;
 	/* Reset everything back to input */
-	gpio_set_direction(PIN_AUX, true);
-	gpio_set_direction(PIN_CLK, true);
-	gpio_set_direction(PIN_CS, true);
-	gpio_set_direction(PIN_MISO, true);
-	gpio_set_direction(PIN_MOSI, true);
+	gpio_init();
 }
 
 static bool cli_aux_read(struct cli_state *state)
 {
 	/* Set AUX to input */
-	gpio_set_direction(PIN_AUX, true);
+	gpio_set_input(PIN_AUX);
 	tty_printf(state->tty, "AUX INPUT/HI-Z, READ: ");
 	tty_putc(state->tty, gpio_get(PIN_AUX) ? '1' : '0');
 	tty_printf(state->tty, "\r\n");
@@ -77,7 +73,7 @@ static bool cli_aux_read(struct cli_state *state)
 static bool cli_aux_set(struct cli_state *state, bool on)
 {
 	/* Set AUX to output */
-	gpio_set_direction(PIN_AUX, false);
+	gpio_set_output(PIN_AUX, false);
 	gpio_set(PIN_AUX, on);
 	tty_printf(state->tty, on ? "AUX HIGH\r\n" : "AUX LOW\r\n");
 

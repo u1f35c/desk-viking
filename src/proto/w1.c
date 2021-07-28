@@ -55,13 +55,13 @@ void w1_write(uint8_t val)
 	for (i = 0; i < 8; i++) {
 		__disable_irq();
 		/* Pull low for 6µs for 1, 60µs for 0 */
-		gpio_set_direction(w1_gpio, false);
+		gpio_set_output(w1_gpio, false);
 		if (val & 1)
 			dwt_delay(6);
 		else
 			dwt_delay(60);
 		/* Release to make up to 70µs total */
-		gpio_set_direction(w1_gpio, true);
+		gpio_set_input(w1_gpio);
 		if (val & 1)
 			dwt_delay(64);
 		else
@@ -78,10 +78,10 @@ bool w1_read_bit(void)
 
 	__disable_irq();
 	/* Pull low for 6µs */
-	gpio_set_direction(w1_gpio, false);
+	gpio_set_output(w1_gpio, false);
 	dwt_delay(6);
 	/* Release for 9µs */
-	gpio_set_direction(w1_gpio, true);
+	gpio_set_input(w1_gpio);
 	dwt_delay(9);
 
 	/* Read the line state */
@@ -120,10 +120,10 @@ bool w1_reset(bool nowait)
 	bool present;
 
 	/* Pull low for 480µs */
-	gpio_set_direction(w1_gpio, false);
+	gpio_set_output(w1_gpio, false);
 	chopstx_usec_wait(480);
 	/* Release for 70µs */
-	gpio_set_direction(w1_gpio, true);
+	gpio_set_input(w1_gpio);
 	chopstx_usec_wait(70);
 
 	/* If there's a device present it'll have pulled the line low */
@@ -142,5 +142,5 @@ void w1_init(uint8_t gpio)
 	/* Set 1w pin to low */
 	gpio_set(w1_gpio, false);
 	/* Set 1w pin to input to let it float high */
-	gpio_set_direction(w1_gpio, true);
+	gpio_set_input(w1_gpio);
 }

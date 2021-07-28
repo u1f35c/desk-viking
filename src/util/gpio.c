@@ -14,6 +14,11 @@
 
 #include "gpio.h"
 
+#define GPIO_CONF_MASK			0xF
+#define GPIO_CONF_OUTPUT_PUSHPULL	0x1
+#define GPIO_CONF_OUTPUT_OPENDRAIN	0x5
+#define GPIO_CONF_INPUT_FLOATING	0x8
+
 static struct GPIO *gpio_get_base(uint8_t gpio)
 {
 	switch (gpio >> 4) {
@@ -32,7 +37,12 @@ static struct GPIO *gpio_get_base(uint8_t gpio)
 	}
 }
 
-void gpio_set_direction(uint8_t gpio, bool input)
+/**
+ * Sets the supplied pin to GPIO input mode, with no pull up/down enabled.
+ *
+ * :param gpio: GPIO pin to set to input mode
+ */
+void gpio_set_input(uint8_t gpio)
 {
 	struct GPIO *bank = gpio_get_base(gpio);
 	uint32_t reg;
@@ -46,13 +56,11 @@ void gpio_set_direction(uint8_t gpio, bool input)
 	/* 4 bits per GPIO */
 	shift = (gpio & 7) << 2;
 
-	if (input) {
-		reg &= ~(7 << shift);
-		reg |= (8 << shift);
-	} else {
-		reg &= ~(12 << shift);
-		reg |= (3 << shift);
-	}
+	/* Clear the current configuration */
+	reg &= ~(GPIO_CONF_MASK << shift);
+
+	/* Set input mode */
+	reg |= (GPIO_CONF_INPUT_FLOATING << shift);
 
 	if (gpio & 8) {
 		bank->CRH = reg;
@@ -61,7 +69,14 @@ void gpio_set_direction(uint8_t gpio, bool input)
 	}
 }
 
-void gpio_set_opendrain(uint8_t gpio, bool open)
+/**
+ * Sets the supplied pin to GPIO output mode. If open is true then the pin is
+ * set to open-drain mode.
+ *
+ * :param gpio: GPIO pin to set to output mode
+ * :param open: True if open-drain mode should be enabled, false for push-pull
+ */
+void gpio_set_output(uint8_t gpio, bool open)
 {
 	struct GPIO *bank = gpio_get_base(gpio);
 	uint32_t reg;
@@ -74,11 +89,14 @@ void gpio_set_opendrain(uint8_t gpio, bool open)
 
 	/* 4 bits per GPIO */
 	shift = (gpio & 7) << 2;
+
+	/* Clear the current configuration */
+	reg &= ~(GPIO_CONF_MASK << shift);
 
 	if (open) {
-		reg |= (4 << shift);
+		reg |= (GPIO_CONF_OUTPUT_OPENDRAIN << shift);
 	} else {
-		reg &= ~(11 << shift);
+		reg |= (GPIO_CONF_OUTPUT_PUSHPULL << shift);
 	}
 
 	if (gpio & 8) {
@@ -88,6 +106,11 @@ void gpio_set_opendrain(uint8_t gpio, bool open)
 	}
 }
 
+/**
+ * Get the currently configured direction for the supplied GPIO pin.
+ *
+ * :param gpio: GPIO pin to query
+ * :return: True if the supplied pin is in input mode, false otherwise */
 bool gpio_get_direction(uint8_t gpio)
 {
 	struct GPIO *bank = gpio_get_base(gpio);
@@ -100,7 +123,9 @@ bool gpio_get_direction(uint8_t gpio)
 	/* 4 bits per GPIO */
 	reg >>= (gpio & 7) << 2;
 
-	return !!(reg & 8);
+	reg &= GPIO_CONF_MASK;
+
+	return (reg == GPIO_CONF_INPUT_FLOATING);
 }
 
 bool gpio_get(uint8_t gpio)
@@ -125,4 +150,16 @@ void gpio_set(uint8_t gpio, bool on)
 	} else {
 		bank->BRR |= 1 << (gpio & 15);
 	}
+}
+
+/**
+ * Initialise all (aux, clock, CS, MISO + MOSI) GPIO pins to input mode.
+ */
+void gpio_init(void)
+{
+	gpio_set_input(PIN_AUX);
+	gpio_set_input(PIN_CLK);
+	gpio_set_input(PIN_CS);
+	gpio_set_input(PIN_MISO);
+	gpio_set_input(PIN_MOSI);
 }
