@@ -15,6 +15,7 @@ enum cli_mode {
 	MODE_HIZ = 0,
 	MODE_1WIRE,
 	MODE_I2C,
+	MODE_DIO,
 	MODE_MAX
 };
 
@@ -24,6 +25,10 @@ struct cli_state {
 	/* Private work space for the current mode */
 	uint8_t priv[16];
 };
+
+/* In cli_dio.c */
+void cli_dio_read(struct cli_state *state);
+void cli_dio_write(struct cli_state *state, uint8_t val);
 
 /* In cli_i2c.c */
 void cli_i2c_setup(struct cli_state *state);

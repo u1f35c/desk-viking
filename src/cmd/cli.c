@@ -50,6 +50,12 @@ const struct cli_mode_info {
 		.read = cli_i2c_read,
 		.write = cli_i2c_write,
 	},
+	{
+		.name = "DIO",
+		.setup = cli_hiz_setup,
+		.read = cli_dio_read,
+		.write = cli_dio_write,
+	},
 };
 
 static void cli_hiz_setup(struct cli_state *state)
