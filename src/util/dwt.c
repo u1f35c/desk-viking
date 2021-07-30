@@ -25,7 +25,7 @@ static volatile uint32_t *DEMCR = (uint32_t *)0xE000EDFC;
 void dwt_delay(uint16_t us)
 {
 	uint32_t start = DWT->CYCCNT;
-	uint32_t count = us * 72;
+	uint32_t count = us * MHZ;
 
 	while ((DWT->CYCCNT - start) < count)
 		;
