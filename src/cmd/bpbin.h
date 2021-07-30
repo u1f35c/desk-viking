@@ -9,7 +9,6 @@
 
 #include "cdc.h"
 
-void bpbin_cfg_pins(uint8_t cfg);
 void bpbin_err(struct cdc *tty);
 void bpbin_ok(struct cdc *tty);
 void bpbin_i2c(struct cdc *tty, char *buf);

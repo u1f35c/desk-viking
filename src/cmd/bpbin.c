@@ -8,51 +8,10 @@
  */
 
 #include "bpbin.h"
+#include "buspirate.h"
 #include "cdc.h"
 #include "debug.h"
 #include "gpio.h"
-
-void bpbin_cfg_pins(uint8_t cfg) {
-	/* Power */
-
-	/* Pull ups */
-
-	/* AUX */
-	gpio_set(PIN_AUX, (cfg & 2));
-
-	/* CS */
-	gpio_set(PIN_CS, (cfg & 1));
-}
-
-void bpbin_set_direction(uint8_t state)
-{
-	/* Configure pins as input/output */
-	if (state & 0x10) {
-		gpio_set_input(PIN_AUX);
-	} else {
-		gpio_set_output(PIN_AUX, false);
-	}
-	if (state & 0x8) {
-		gpio_set_input(PIN_MOSI);
-	} else {
-		gpio_set_output(PIN_MOSI, false);
-	}
-	if (state & 0x4) {
-		gpio_set_input(PIN_CLK);
-	} else {
-		gpio_set_output(PIN_CLK, false);
-	}
-	if (state & 0x2) {
-		gpio_set_input(PIN_MISO);
-	} else {
-		gpio_set_output(PIN_MISO, false);
-	}
-	if (state & 0x1) {
-		gpio_set_input(PIN_CS);
-	} else {
-		gpio_set_output(PIN_CS, false);
-	}
-}
 
 void bpbin_err(struct cdc *tty)
 {
@@ -69,19 +28,6 @@ void bpbin_ok(struct cdc *tty)
 static void bpbin_send_bbio1(struct cdc *tty)
 {
 	cdc_send(tty, "BBIO1", 5);
-}
-
-static uint8_t bpbin_read_state(void)
-{
-	uint8_t resp;
-
-	resp = gpio_get(PIN_AUX) ? 0x10 : 0;
-	resp |= gpio_get(PIN_MOSI) ? 0x8 : 0;
-	resp |= gpio_get(PIN_CLK) ? 0x4 : 0;
-	resp |= gpio_get(PIN_MISO) ? 0x2 : 0;
-	resp |= gpio_get(PIN_CS) ? 0x1 : 0;
-
-	return resp;
 }
 
 static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
@@ -120,26 +66,13 @@ bool bpbin_main(struct cdc *tty)
 		for (i = 0; i < len; i++) {
 			if (buf[i] & 0x80) {
 				/* Set/get pin status */
-
-				resp = 0x80 | bpbin_read_state();
-
-				/*
-				 * Not yet implemented.
-				 * gpio_set(PIN_POWER, buf[i] & 0x40);
-				 * gpio_set(PIN_PULLUP, buf[i] & 0x20);
-				 */
-				gpio_set(PIN_AUX, buf[i] & 0x10);
-				gpio_set(PIN_MOSI, buf[i] & 0x8);
-				gpio_set(PIN_CLK, buf[i] & 0x4);
-				gpio_set(PIN_MISO, buf[i] & 0x2);
-				gpio_set(PIN_CS, buf[i] & 0x1);
-
+				resp = 0x80 | bp_read_state();
+				bp_set_state(buf[i]);
 				cdc_send(tty, (char *) &resp, 1);
 			} else if ((buf[i] & 0xE0) == 0x40) {
 				/* Configure pins as input/output */
-				bpbin_set_direction(buf[i]);
-
-				resp = 0x40 | bpbin_read_state();
+				bp_set_direction(buf[i]);
+				resp = 0x40 | bp_read_state();
 				cdc_send(tty, (char *) &resp, 1);
 			} else {
 				switch(buf[i]) {

@@ -8,6 +8,7 @@
  */
 
 #include "bpbin.h"
+#include "buspirate.h"
 #include "cdc.h"
 #include "debug.h"
 #include "gpio.h"
@@ -76,7 +77,7 @@ void bpbin_i2c(struct cdc *tty, char *buf)
 				}
 			} else if ((buf[i] & 0xF0) == 0x40) {
 				/* Configure peripheral pins */
-				bpbin_cfg_pins(buf[i] & 0xF);
+				bp_cfg_extra_pins(buf[i] & 0xF);
 				bpbin_ok(tty);
 			} else if ((buf[i] & 0xFC) == 0x60) {
 				/* Set speed */
