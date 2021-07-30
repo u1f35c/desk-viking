@@ -61,13 +61,15 @@ void bpbin_i2c(struct cdc *tty, char *buf)
 			} else if ((buf[i] & 0xF0) == 0x10) {
 				/* Send 1-16 bytes */
 				int left = (buf[i] & 0xF) + 1;
-				i++;
+
+				bpbin_ok(tty);
+
 				while (left) {
+					i++;
 					if (i < len) {
 						resp = i2c_write(buf[i]) ? 1 : 0;
 						cdc_send(tty, (char *) &resp, 1);
 						left--;
-						i++;
 					} else {
 						len = cdc_recv(tty, buf, NULL);
 						if (len < 0)
