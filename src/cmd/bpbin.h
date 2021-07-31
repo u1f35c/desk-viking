@@ -12,6 +12,7 @@
 void bpbin_err(struct cdc *tty);
 void bpbin_ok(struct cdc *tty);
 void bpbin_i2c(struct cdc *tty, char *buf);
+void bpbin_raw(struct cdc *tty, char *buf);
 void bpbin_w1(struct cdc *tty, char *buf);
 
 #endif /* __BPBIN_H__ */

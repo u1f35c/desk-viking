@@ -97,6 +97,10 @@ bool bpbin_main(struct cdc *tty)
 					break;
 				case 5:
 					/* Raw */
+					debug_print("Entering Bus Pirate binary raw mode.\r\n");
+					bpbin_raw(tty, buf);
+					bpbin_send_bbio1(tty);
+					break;
 				case 6:
 					/* OpenOCD JTAG */
 				case 7:
