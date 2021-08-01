@@ -13,6 +13,7 @@ The user interface is designed to be compatible (though not identical to) the Bu
 The protocols currently supported are:
 
  * 1-Wire
+ * CCLib/Proxy (debugging/programming of Texas Instruments CCxxxx chips)
  * I2C
 
 ## Building
@@ -57,9 +58,16 @@ This is a fledgling project and there is much to do.
 
 ### Access methods
 
-The intent is to implement the Bus Pirate binary access method, allowing the use of tools which already support this protocol to use the Desk Viking without modification. Examples of tools that it is aimed to be compatible with include [AVRDUDE](https://www.nongnu.org/avrdude/), [flashrom](https://www.flashrom.org/Flashrom) and [OpenOCD](http://openocd.org/).
+The intent is to implement various binary access methods that are not incompatible with each other, allowing the use of tools which already support those protocols to use the Desk Viking without modification. Primarily these are the Bus Pirate binary modes (BBIO, RAW, I2C + 1-Wire are already supported), but the CCLib CCProxy protocol is also implemented in a co-existing manner and it looks possible to implement the [SUMP](https://www.sump.org/projects/analyzer/protocol/) logical analyser protocol too.
 
-It should also be possible to support [CCLib](https://github.com/wavesoft/CCLib) in order to allow debugging of Texas Instruments' CCxxxx chips.
+| Tool                                          | Protocol                   | Status    |
+|-----------------------------------------------|----------------------------|-----------|
+| [AVRDUDE](https://www.nongnu.org/avrdude/)    | Bus Pirate binary SPI mode | Planned   |
+| [CCLib](https://github.com/u1f35c/CCLib)      | CCProxy                    | Supported |
+| [flashrom](https://www.flashrom.org/Flashrom) | Bus Pirate binary SPI mode | Planned   |
+| [OpenOCD](http://openocd.org/) (SWD)          | Bus Pirate Binary RAW mode | Supported |
+| [OpenOCD](http://openocd.org/) (JTAG)         | Bus Pirate OpenOCD mode    | Planned   |
+| [sigrok](https://sigrok.org/)                 | SUMP                       | Planned   |
 
 ### Protocols
 
