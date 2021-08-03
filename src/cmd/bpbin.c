@@ -34,6 +34,8 @@ static uint8_t bpbin_selftest(struct cdc *tty, uint8_t *buf, bool quick)
 {
 	int i, len;
 
+	(void)quick;
+
 	/* Fake all tests ok */
 	bpbin_ok(tty);
 
