@@ -13,12 +13,12 @@
 
 void tty_printf(struct cdc *tty, const char *str)
 {
-	cdc_send(tty, str, strlen(str));
+	cdc_send(tty, (uint8_t *) str, strlen(str));
 }
 
 void tty_putc(struct cdc *tty, const char c)
 {
-	cdc_send(tty, &c, 1);
+	cdc_send(tty, (uint8_t *) &c, 1);
 }
 
 void tty_printbin(struct cdc *tty, int val)
@@ -106,7 +106,7 @@ int tty_readline(struct cdc *tty, char *line, int linesize)
 		uint32_t timeout;
 
 		timeout = 3000000; /* 3.0 seconds */
-		size = cdc_recv(tty, buf, &timeout);
+		size = cdc_recv(tty, (uint8_t *) buf, &timeout);
 
 		if (size < 0)
 			return TTY_DISCONNECTED;

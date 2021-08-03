@@ -16,10 +16,10 @@
 
 static void bpbin_send_i2c1(struct cdc *tty)
 {
-	cdc_send(tty, "I2C1", 4);
+	cdc_send(tty, (uint8_t *) "I2C1", 4);
 }
 
-void bpbin_i2c(struct cdc *tty, char *buf)
+void bpbin_i2c(struct cdc *tty, uint8_t *buf)
 {
 	int i, len;
 	uint8_t resp;
@@ -49,7 +49,7 @@ void bpbin_i2c(struct cdc *tty, char *buf)
 			} else if (buf[i] == 4) {
 				/* Read byte */
 				resp = i2c_read();
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else if (buf[i] == 6) {
 				/* ACK bit */
 				i2c_write_bit(false);
@@ -68,7 +68,7 @@ void bpbin_i2c(struct cdc *tty, char *buf)
 					i++;
 					if (i < len) {
 						resp = i2c_write(buf[i]) ? 1 : 0;
-						cdc_send(tty, (char *) &resp, 1);
+						cdc_send(tty, &resp, 1);
 						left--;
 					} else {
 						len = cdc_recv(tty, buf, NULL);

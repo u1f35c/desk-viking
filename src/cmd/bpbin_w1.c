@@ -16,10 +16,10 @@
 
 static void bpbin_send_1w10(struct cdc *tty)
 {
-	cdc_send(tty, "1W01", 4);
+	cdc_send(tty, (uint8_t *) "1W01", 4);
 }
 
-void bpbin_w1(struct cdc *tty, char *buf)
+void bpbin_w1(struct cdc *tty, uint8_t *buf)
 {
 	int i, len;
 	uint8_t resp;
@@ -46,15 +46,15 @@ void bpbin_w1(struct cdc *tty, char *buf)
 			} else if (buf[i] == 4) {
 				/* Read byte */
 				w1_read(&resp, 1);
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else if (buf[i] == 8) {
 				/* ROM search (0xF0) */
 				bpbin_ok(tty);
-				cdc_send(tty, (char *) search, 8);
+				cdc_send(tty, search, 8);
 			} else if (buf[i] == 9) {
 				/* ALARM search (0xEC) */
 				bpbin_ok(tty);
-				cdc_send(tty, (char *) search, 8);
+				cdc_send(tty, search, 8);
 			} else if ((buf[i] & 0xF0) == 0x10) {
 				/* Send 1-16 bytes */
 				int left = (buf[i] & 0xF) + 1;

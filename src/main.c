@@ -41,8 +41,8 @@ static char hexchar (uint8_t x)
 }
 
 bool bpbin_main(struct cdc *tty);
-bool cli_main(struct cdc *tty, const char *s, int len);
-void ccproxy_main(struct cdc *tty, const char *s, int len);
+bool cli_main(struct cdc *tty, const uint8_t *s, int len);
+void ccproxy_main(struct cdc *tty, const uint8_t *s, int len);
 
 #ifdef GNU_LINUX_EMULATION
 int emulated_main(int argc, const char *argv[])
@@ -76,7 +76,7 @@ int main(int argc, const char *argv[])
 
 	count = 0;
 	while (1) {
-		char s[70];
+		uint8_t s[70];
 
 		debug_print("Waiting for connection.\r\n");
 		cdc_connected(tty, true);
@@ -92,7 +92,7 @@ int main(int argc, const char *argv[])
 		s[32] = 0;
 		count++;
 
-		debug_print(s);
+		debug_print((char *)s);
 
 		zerocnt = 0;
 		while (1) {

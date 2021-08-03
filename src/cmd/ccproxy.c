@@ -41,7 +41,7 @@
 
 void ccproxy_sendframe(struct cdc *tty, uint8_t ans, uint8_t b0, uint8_t b1)
 {
-	char buf[3];
+	uint8_t buf[3];
 
 	buf[0] = ans;
 	buf[1] = b1;
@@ -62,7 +62,7 @@ static void ccproxy_sendresp(struct cdc *tty, struct ccdbg_state *ctx,
 }
 
 static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
-		char *cmd)
+		uint8_t *cmd)
 {
 	uint8_t ret;
 	int left, read;
@@ -234,9 +234,9 @@ static void ccproxy_handle_cmd(struct cdc *tty, struct ccdbg_state *ctx,
 	}
 }
 
-void ccproxy_main(struct cdc *tty, const char *s, int len)
+void ccproxy_main(struct cdc *tty, const uint8_t *s, int len)
 {
-	char buf[CDC_BUFSIZE];
+	uint8_t buf[CDC_BUFSIZE];
 	int cur_len, i, ret;
 	struct ccdbg_state *ctx;
 

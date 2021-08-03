@@ -322,7 +322,8 @@ uint8_t ccdbg_instrtblver(struct ccdbg_state *ctx)
 	return ctx->instr[INSTR_VERSION];
 }
 
-uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const char *buf, int ofs, int len)
+uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const uint8_t *buf, int ofs,
+		int len)
 {
 	if (ofs >= CCDBG_INSTRLEN)
 		return 0;

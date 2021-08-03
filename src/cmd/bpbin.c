@@ -15,22 +15,22 @@
 
 void bpbin_err(struct cdc *tty)
 {
-	char resp = 0;
+	uint8_t resp = 0;
 	cdc_send(tty, &resp, 1);
 }
 
 void bpbin_ok(struct cdc *tty)
 {
-	char resp = 1;
+	uint8_t resp = 1;
 	cdc_send(tty, &resp, 1);
 }
 
 static void bpbin_send_bbio1(struct cdc *tty)
 {
-	cdc_send(tty, "BBIO1", 5);
+	cdc_send(tty, (uint8_t *) "BBIO1", 5);
 }
 
-static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
+static uint8_t bpbin_selftest(struct cdc *tty, uint8_t *buf, bool quick)
 {
 	int i, len;
 
@@ -52,7 +52,7 @@ static uint8_t bpbin_selftest(struct cdc *tty, char *buf, bool quick)
 
 bool bpbin_main(struct cdc *tty)
 {
-	char buf[CDC_BUFSIZE];
+	uint8_t buf[CDC_BUFSIZE];
 	int i, len;
 	uint8_t resp;
 
@@ -68,12 +68,12 @@ bool bpbin_main(struct cdc *tty)
 				/* Set/get pin status */
 				resp = 0x80 | bp_read_state();
 				bp_set_state(buf[i]);
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else if ((buf[i] & 0xE0) == 0x40) {
 				/* Configure pins as input/output */
 				bp_set_direction(buf[i]);
 				resp = 0x40 | bp_read_state();
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else {
 				switch(buf[i]) {
 				case 0:
@@ -122,7 +122,7 @@ bool bpbin_main(struct cdc *tty)
 					/* Self test mode */
 					len = 0;
 					resp = bpbin_selftest(tty, buf, buf[i] & 1);
-					cdc_send(tty, (char *) &resp, 1);
+					cdc_send(tty, &resp, 1);
 					break;
 				default:
 					debug_print("Unknown raw mode command.\r\n");

@@ -27,7 +27,7 @@ struct bp_raw_conf {
 
 static void bpbin_send_raw1(struct cdc *tty)
 {
-	cdc_send(tty, "RAW1", 4);
+	cdc_send(tty, (uint8_t *) "RAW1", 4);
 }
 
 static void bpbin_raw_clock_tick(struct bp_raw_conf *conf)
@@ -166,7 +166,7 @@ static void bpbin_raw_set_speed(struct bp_raw_conf *conf, int speed)
 	}
 }
 
-void bpbin_raw(struct cdc *tty, char *buf)
+void bpbin_raw(struct cdc *tty, uint8_t *buf)
 {
 	int i, len;
 	uint8_t resp;
@@ -212,18 +212,18 @@ void bpbin_raw(struct cdc *tty, char *buf)
 			} else if (buf[i] == 6) {
 				/* Read byte */
 				resp = bpbin_raw_read(&conf);
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else if (buf[i] == 7) {
 				/* Read bit */
 				resp = bpbin_raw_read_bit(&conf) ? 1 : 0;
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 			} else if (buf[i] == 8) {
 				/* Peek at input pin */
 				if (conf.raw2wire)
 					gpio_set_input(PIN_MOSI);
 				resp = gpio_get(conf.raw2wire ? PIN_MOSI :
 							PIN_MISO);
-				cdc_send(tty, (char *) &resp, 1);
+				cdc_send(tty, &resp, 1);
 				bpbin_ok(tty);
 			} else if (buf[i] == 9) {
 				/* Clock tick */
@@ -249,7 +249,7 @@ void bpbin_raw(struct cdc *tty, char *buf)
 						resp = bpbin_raw_write(&conf, buf[i]);
 						if (conf.raw2wire)
 							resp = 1;
-						cdc_send(tty, (char *) &resp, 1);
+						cdc_send(tty, &resp, 1);
 						left--;
 					} else {
 						len = cdc_recv(tty, buf, NULL);

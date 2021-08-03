@@ -830,7 +830,7 @@ bool cdc_connected(struct cdc *s, bool wait)
  *          >0 length of the input
  *
  */
-int cdc_recv(struct cdc *s, char *buf, uint32_t *timeout)
+int cdc_recv(struct cdc *s, uint8_t *buf, uint32_t *timeout)
 {
 	int r;
 	chopstx_poll_cond_t poll_desc;
@@ -870,10 +870,10 @@ int cdc_recv(struct cdc *s, char *buf, uint32_t *timeout)
 	return r;
 }
 
-int cdc_send(struct cdc *s, const char *buf, int len)
+int cdc_send(struct cdc *s, const uint8_t *buf, int len)
 {
 	int r;
-	const char *p;
+	const uint8_t *p;
 	int count;
 
 	p = buf;

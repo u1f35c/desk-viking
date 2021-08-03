@@ -33,7 +33,7 @@ uint8_t ccdbg_chiperase(struct ccdbg_state *ctx);
 uint8_t ccdbg_resume(struct ccdbg_state *ctx);
 uint8_t ccdbg_halt(struct ccdbg_state *ctx);
 uint8_t ccdbg_instrtblver(struct ccdbg_state *ctx);
-uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const char *buf, int ofs,
+uint8_t ccdbg_updateinstr(struct ccdbg_state *ctx, const uint8_t *buf, int ofs,
 		int len);
 uint16_t ccdbg_chipid(struct ccdbg_state *ctx);
 uint16_t ccdbg_getPC(struct ccdbg_state *ctx);
