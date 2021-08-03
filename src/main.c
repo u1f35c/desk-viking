@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <chopstx.h>
+#ifdef GNU_LINUX_EMULATION
+#include <stdio.h>
+#endif
 
 #include <usb_lld.h>
 
@@ -23,7 +26,7 @@
 #define STACK_MAIN
 #define STACK_PROCESS_1
 #include "stack-def.h"
-#define STACK_ADDR_CDC ((uint32_t)process1_base)
+#define STACK_ADDR_CDC ((uintptr_t)process1_base)
 #define STACK_SIZE_CDC (sizeof process1_base)
 
 static char hexchar (uint8_t x)
@@ -41,7 +44,11 @@ bool bpbin_main(struct cdc *tty);
 bool cli_main(struct cdc *tty, const char *s, int len);
 void ccproxy_main(struct cdc *tty, const char *s, int len);
 
+#ifdef GNU_LINUX_EMULATION
+int emulated_main(int argc, const char *argv[])
+#else
 int main(int argc, const char *argv[])
+#endif
 {
 	unsigned int zerocnt;
 	struct cdc *tty;
@@ -55,7 +62,7 @@ int main(int argc, const char *argv[])
 	dwt_init();
 
 	/* Reset everything back to input */
-	gpio_init();
+	bv_gpio_init();
 
 	/* Setup our USB CDC ACM devices */
 	cdc_init(PRIO_CDC, STACK_ADDR_CDC, STACK_SIZE_CDC, NULL, NULL);

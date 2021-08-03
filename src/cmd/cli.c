@@ -62,7 +62,7 @@ static void cli_hiz_setup(struct cli_state *state)
 {
 	(void)state;
 	/* Reset everything back to input */
-	gpio_init();
+	bv_gpio_init();
 }
 
 static bool cli_aux_read(struct cli_state *state)

@@ -155,7 +155,7 @@ void gpio_set(uint8_t gpio, bool on)
 /**
  * Initialise all (aux, clock, CS, MISO + MOSI) GPIO pins to input mode.
  */
-void gpio_init(void)
+void bv_gpio_init(void)
 {
 	gpio_set_input(PIN_AUX);
 	gpio_set_input(PIN_CLK);

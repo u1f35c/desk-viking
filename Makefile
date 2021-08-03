@@ -2,7 +2,6 @@
 
 PROJECT = desk-viking
 
-ARCH = cortex-m
 CHOPSTX ?= ../chopstx
 LDSCRIPT = desk-viking.ld
 CSRC = src/main.c \
@@ -11,29 +10,37 @@ CSRC = src/main.c \
        src/cmd/ccproxy.c \
        src/cmd/cli.c src/cmd/cli_dio.c src/cmd/cli_i2c.c src/cmd/cli_w1.c \
        src/proto/buspirate.c src/proto/ccdbg.c src/proto/i2c.c src/proto/w1.c \
-       src/util/debug.c src/util/dwt.c src/util/gpio.c src/util/tty.c \
-       src/util/usb-cdc.c
-
-CHIP=stm32f103
+       src/util/debug.c src/util/tty.c src/util/usb-cdc.c
 
 USE_SYS = yes
 USE_USB = yes
-ENABLE_OUTPUT_HEX = yes
 
-###################################
-CROSS ?= arm-none-eabi-
-CC   = $(CROSS)gcc
-LD   = $(CROSS)gcc
-OBJCOPY   = $(CROSS)objcopy
-
+ifeq ($(EMULATION),)
+ARCH   = cortex-m
 MCU    = cortex-m3
-CWARN  = -Wall -Wextra -Wstrict-prototypes
+CHIP   = stm32f103
+CROSS ?= arm-none-eabi-
 DEFS   = -DUSE_SYS3 -DFREE_STANDING -DMHZ=72
-OPT    = -O3 -Os -g
 LIBS   =
+ENABLE_OUTPUT_HEX = yes
+else
+ARCH = gnu-linux
+CHIP = gnu-linux
+DEFS = -DGNU_LINUX_EMULATION -DMHZ=80
+LIBS = -lpthread
+endif
+
+# These sources have per-platform versions.
+CSRC += src/util/dwt-$(CHIP).c src/util/gpio-$(CHIP).c
+
+CC      = $(CROSS)gcc
+LD      = $(CROSS)gcc
+OBJCOPY = $(CROSS)objcopy
+
+CWARN  = -Wall -Wextra -Wstrict-prototypes
+OPT    = -O3 -Os -g
 INCDIR = include
 
-####################
 include $(CHOPSTX)/rules.mk
 
 board.h:

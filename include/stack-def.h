@@ -1,3 +1,9 @@
+#ifdef GNU_LINUX_EMULATION
+#define STACK_DEFAULT_SIZE	0x8000
+#else
+#define STACK_DEFAULT_SIZE	0x0200
+#endif
+
 #if defined(STACK_MAIN)
 /* Idle+Exception handlers */
 char __main_stack_end__[0] __attribute__ ((section(".main_stack")));
@@ -10,15 +16,15 @@ char process0_base[0x0400] __attribute__ ((section(".process_stack.0")));
 
 /* First thread program    */
 #if defined(STACK_PROCESS_1)
-char process1_base[0x0200] __attribute__ ((section(".process_stack.1"))); 
+char process1_base[STACK_DEFAULT_SIZE] __attribute__ ((section(".process_stack.1")));
 #endif
 
 /* Second thread program   */
 #if defined(STACK_PROCESS_2)
-char process2_base[0x0200] __attribute__ ((section(".process_stack.2")));
+char process2_base[STACK_DEFAULT_SIZE] __attribute__ ((section(".process_stack.2")));
 #endif
 
 /* Third thread program    */
 #if defined(STACK_PROCESS_3)
-char process3_base[0x0200] __attribute__ ((section(".process_stack.3")));
+char process3_base[STACK_DEFAULT_SIZE] __attribute__ ((section(".process_stack.3")));
 #endif

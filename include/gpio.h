@@ -28,6 +28,6 @@ void gpio_set_input(uint8_t gpio);
 void gpio_set_output(uint8_t gpio, bool open);
 bool gpio_get(uint8_t gpio);
 void gpio_set(uint8_t gpio, bool on);
-void gpio_init(void);
+void bv_gpio_init(void);
 
 #endif /* __GPIO_H__ */

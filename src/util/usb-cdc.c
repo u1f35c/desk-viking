@@ -42,6 +42,10 @@ struct cdc {
 	chopstx_cond_t cnd_rx;
 	chopstx_cond_t cnd_tx;
 	uint8_t input[CDC_BUFSIZE];
+#ifdef GNU_LINUX_EMULATION
+	uint8_t send_buf0[CDC_BUFSIZE];
+	uint8_t recv_buf0[CDC_BUFSIZE];
+#endif
 	uint32_t input_len        : 7;
 	uint32_t flag_connected   : 1;
 	uint32_t flag_output_ready: 1;
@@ -269,6 +273,15 @@ static const uint8_t vcom_string2[] = {
 	'V', 0, 'i', 0, 'k', 0, 'i', 0, 'n', 0, 'g', 0,
 };
 
+static void cdc_lld_rx_enable(struct cdc *s)
+{
+#ifdef GNU_LINUX_EMULATION
+	usb_lld_rx_enable_buf(s->bulk_ep, s->recv_buf0, CDC_BUFSIZE);
+#else
+	usb_lld_rx_enable(s->bulk_ep);
+#endif
+}
+
 /*
  * Serial Number string.
  */
@@ -307,8 +320,12 @@ static void usb_device_reset(struct usb_dev *dev)
 	usb_lld_reset(dev, VCOM_FEATURE_BUS_POWERED);
 
 	/* Initialize Endpoint 0 */
+#ifdef GNU_LINUX_EMULATION
+	usb_lld_setup_endp(dev, ENDP0, 1, 1);
+#else
 	usb_lld_setup_endpoint(ENDP0, EP_CONTROL, 0, ENDP0_RXADDR,
 			ENDP0_TXADDR, CDC_BUFSIZE);
+#endif
 
 	device_state = USB_DEVICE_STATE_ATTACHED;
 	for (i = 0; i < MAX_CDC; i++) {
@@ -452,21 +469,34 @@ static int usb_get_descriptor(struct usb_dev *dev)
 	return -1;
 }
 
-static void cdc_setup_endpoints_for_interface(uint16_t interface, int stop)
+static void cdc_setup_endpoints_for_interface(struct usb_dev *dev,
+		uint16_t interface, int stop)
 {
 	struct cdc *s = cdc_get(interface, 0);
 
+#ifndef GNU_LINUX_EMULATION
+	(void)dev;
+#endif
+
 	if (interface == 0) {
 		if (!stop)
+#ifdef GNU_LINUX_EMULATION
+			usb_lld_setup_endp(dev, s->intr_ep, 0, 1);
+#else
 			usb_lld_setup_endpoint(s->intr_ep, EP_INTERRUPT, 0, 0,
 					ENDP1_TXADDR, 0);
+#endif
 		else
 			usb_lld_stall_tx(s->intr_ep);
 	} else if (interface == 1) {
 		if (!stop) {
+#ifdef GNU_LINUX_EMULATION
+			usb_lld_setup_endp(dev, s->bulk_ep, 1, 1);
+#else
 			usb_lld_setup_endpoint(s->bulk_ep, EP_BULK, 0,
 					ENDP2_RXADDR, ENDP2_TXADDR,
 					CDC_BUFSIZE);
+#endif
 			/* Start with no data receiving (ENDP2 not enabled)*/
 		} else {
 			usb_lld_stall_tx(s->bulk_ep);
@@ -474,15 +504,23 @@ static void cdc_setup_endpoints_for_interface(uint16_t interface, int stop)
 		}
 	} else if (interface == 2) {
 		if (!stop)
+#ifdef GNU_LINUX_EMULATION
+			usb_lld_setup_endp(dev, s->intr_ep, 0, 1);
+#else
 			usb_lld_setup_endpoint(s->intr_ep, EP_INTERRUPT, 0, 0,
 					ENDP3_TXADDR, 0);
+#endif
 		else
 			usb_lld_stall_tx(s->intr_ep);
 	} else if (interface == 3) {
 		if (!stop) {
+#ifdef GNU_LINUX_EMULATION
+			usb_lld_setup_endp(dev, s->bulk_ep, 1, 1);
+#else
 			usb_lld_setup_endpoint(s->bulk_ep, EP_BULK, 0,
 					ENDP4_RXADDR, ENDP4_TXADDR,
 					CDC_BUFSIZE);
+#endif
 			/* Start with no data receiving (ENDP4 not enabled)*/
 		} else {
 			usb_lld_stall_tx(s->bulk_ep);
@@ -503,7 +541,7 @@ static int usb_set_configuration(struct usb_dev *dev)
 
 		usb_lld_set_configuration (dev, 1);
 		for (i = 0; i < NUM_INTERFACES; i++)
-			cdc_setup_endpoints_for_interface(i, 0);
+			cdc_setup_endpoints_for_interface(dev, i, 0);
 		device_state = USB_DEVICE_STATE_CONFIGURED;
 		for (i = 0; i < MAX_CDC; i++) {
 			struct cdc *s = &cdc_table[i];
@@ -518,7 +556,7 @@ static int usb_set_configuration(struct usb_dev *dev)
 
 		usb_lld_set_configuration (dev, 0);
 		for (i = 0; i < NUM_INTERFACES; i++)
-			cdc_setup_endpoints_for_interface(i, 1);
+			cdc_setup_endpoints_for_interface(dev, i, 1);
 		device_state = USB_DEVICE_STATE_ADDRESSED;
 		for (i = 0; i < MAX_CDC; i++) {
 			struct cdc *s = &cdc_table[i];
@@ -544,7 +582,7 @@ static int usb_set_interface(struct usb_dev *dev)
 	if (alt != 0)
 		return -1;
 	else {
-		cdc_setup_endpoints_for_interface(interface, 0);
+		cdc_setup_endpoints_for_interface(dev, interface, 0);
 		return usb_lld_ctrl_ack(dev);
 	}
 }
@@ -595,7 +633,11 @@ static void usb_rx_ready(uint8_t ep_num, uint16_t len)
 	struct cdc *s = cdc_get(-1, ep_num);
 
 	if (ep_num == s->bulk_ep) {
+#ifdef GNU_LINUX_EMULATION
+		memcpy(s->input, s->recv_buf0, len);
+#else
 		usb_lld_rxcpy(s->input, ep_num, 0, len);
+#endif
 		s->flag_input_avail = 1;
 		s->input_len = len;
 		chopstx_cond_signal(&s->cnd_rx);
@@ -775,7 +817,7 @@ bool cdc_connected(struct cdc *s, bool wait)
 		s->flag_output_ready = 1;
 		s->flag_input_avail = 0;
 		s->input_len = 0;
-		usb_lld_rx_enable(s->bulk_ep);	/* Accept input for line */
+		cdc_lld_rx_enable(s);	/* Accept input for line */
 	}
 	chopstx_mutex_unlock(&s->mtx);
 
@@ -819,7 +861,7 @@ int cdc_recv(struct cdc *s, char *buf, uint32_t *timeout)
 		r = s->input_len;
 		memcpy(buf, s->input, r);
 		s->flag_input_avail = 0;
-		usb_lld_rx_enable(s->bulk_ep);
+		cdc_lld_rx_enable(s);
 		s->input_len = 0;
 	} else
 		r = 0;
@@ -842,8 +884,13 @@ int cdc_send(struct cdc *s, const char *buf, int len)
 		while ((r = check_tx(s)) == 0)
 			chopstx_cond_wait(&s->cnd_tx, &s->mtx);
 		if (r > 0) {
+#ifdef GNU_LINUX_EMULATION
+			memcpy(s->send_buf0, p, count);
+			usb_lld_tx_enable_buf(s->bulk_ep, s->send_buf0, count);
+#else
 			usb_lld_txcpy(p, s->bulk_ep, 0, count);
 			usb_lld_tx_enable(s->bulk_ep, count);
+#endif
 			s->flag_output_ready = 0;
 		}
 		chopstx_mutex_unlock(&s->mtx);
@@ -887,7 +934,13 @@ int cdc_ss_notify(struct cdc *s, uint16_t state_bits)
 	chopstx_mutex_lock(&s->mtx);
 	busy = s->flag_notify_busy;
 	if (!busy) {
-		usb_lld_write(s->intr_ep, notification, sizeof notification);
+#ifdef GNU_LINUX_EMULATION
+		memcpy(s->send_buf0, notification, sizeof(notification));
+		usb_lld_tx_enable_buf(s->intr_ep, s->send_buf0,
+				sizeof(notification));
+#else
+		usb_lld_write(s->intr_ep, notification, sizeof(notification));
+#endif
 		s->flag_notify_busy = 1;
 	}
 	chopstx_mutex_unlock(&s->mtx);
