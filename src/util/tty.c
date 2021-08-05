@@ -68,9 +68,9 @@ void tty_printhex(struct cdc *tty, unsigned int val, int places)
 	if (places == 0) {
 		if (val > 0xFFF) {
 			places = 4;
-		} if (val > 0xFF) {
+		} else if (val > 0xFF) {
 			places = 3;
-		} if (val > 0xF) {
+		} else if (val > 0xF) {
 			places = 2;
 		} else {
 			places = 1;
