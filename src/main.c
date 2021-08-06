@@ -20,6 +20,7 @@
 #include "debug.h"
 #include "dwt.h"
 #include "gpio.h"
+#include "version.h"
 
 #define PRIO_CDC 2
 
@@ -57,6 +58,10 @@ int main(int argc, const char *argv[])
 
 	(void)argc;
 	(void)argv;
+
+#ifdef GNU_LINUX_EMULATION
+	printf("Desk Viking " VER_STRING " (emulation with USBIP), a Bus Pirate inspired debug tool.\n");
+#endif
 
 	chopstx_usec_wait(200*1000);
 	dwt_init();

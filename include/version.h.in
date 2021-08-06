@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Basic routines to bit-bang standard 1-Wire via a GPIO pin
+ *
+ * Copyright 2021 Jonathan McDowell <noodles@earth.li>
+ */
+#ifndef __VERSION_H__
+#define __VERSION_H__
+
+#define VER_STRING		"@GIT@"
+
+#endif /* __VERSION_H__ */

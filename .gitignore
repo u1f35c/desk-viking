@@ -1,3 +1,4 @@
 .dep/
 build/
 board.h
+include/version.h

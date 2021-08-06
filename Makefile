@@ -1,6 +1,7 @@
 # Makefile for Desk Viking, a Bus Pirate inspired firmware for the STM32F103
 
 PROJECT = desk-viking
+GIT_VERSION := $(shell git describe --tags --dirty="-modified")
 
 CHOPSTX ?= ../chopstx
 LDSCRIPT = desk-viking.ld
@@ -43,11 +44,16 @@ INCDIR = include
 
 include $(CHOPSTX)/rules.mk
 
+include/version.h: include/version.h.in .git/index
+	sed -e 's/@GIT@/$(GIT_VERSION)/' include/version.h.in > include/version.h
+
 board.h:
 	@echo Please make a symbolic link \'board.h\' to a file in $(CHOPSTX)/board;
 	@exit 1
 
 distclean: clean
-	rm -f board.h
+	rm -f board.h include/version.h
 
-build/main.o: board.h
+build/main.o: board.h include/version.h
+
+build/cli.o: include/version.h

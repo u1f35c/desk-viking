@@ -18,6 +18,7 @@
 #include "debug.h"
 #include "gpio.h"
 #include "tty.h"
+#include "version.h"
 
 #include "cli.h"
 
@@ -88,7 +89,7 @@ static bool cli_aux_set(struct cli_state *state, bool on)
 
 static bool cli_banner(struct cli_state *state)
 {
-	tty_printf(state->tty, "DeskViking v0.1\r\n");
+	tty_printf(state->tty, "DeskViking " VER_STRING "\r\n");
 	tty_printf(state->tty, "Board name: " BOARD_NAME ", SYS Version: ");
 	tty_putc(state->tty, sys_version[2]);
 	tty_putc(state->tty, sys_version[4]);
