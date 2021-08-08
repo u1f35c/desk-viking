@@ -12,6 +12,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef GNU_LINUX_EMULATION
+
+#define PIN_AUX		0
+#define PIN_MOSI	1
+#define PIN_CLK		2
+#define PIN_MISO	3
+#define PIN_CS		4
+#define PIN_COUNT	5
+
+#else
+
 /* PB8 */
 #define PIN_AUX		(16 + 8)
 /* PB13 */
@@ -22,6 +33,8 @@
 #define PIN_MISO	(16 + 14)
 /* PB15 */
 #define PIN_MOSI	(16 + 15)
+
+#endif
 
 bool gpio_get_direction(uint8_t gpio);
 void gpio_set_input(uint8_t gpio);

@@ -9,13 +9,20 @@
 
 #include "dwt.h"
 
-/* Busy wait for a certain number of µs using the DWT counter */
+/* In gpio.c, but we don't want it generally visible */
+void gpio_advance_clock(int us);
+
+/**
+ * Tell the GPIO module we waited for a certain number of µs
+ */
 void dwt_delay(uint16_t us)
 {
-	usleep(us);
+	gpio_advance_clock(us);
 }
 
-/* Initialise and reset the DWT counter */
+/**
+ * No-op initialisation of the DWT counter
+ */
 void dwt_init(void)
 {
 }
