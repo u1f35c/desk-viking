@@ -7,6 +7,8 @@
  * Copyright 2021 Jonathan McDowell <noodles@earth.li>
  */
 
+#include <string.h>
+
 #include "bpbin.h"
 #include "buspirate.h"
 #include "cdc.h"
@@ -22,8 +24,10 @@ static void bpbin_send_1w10(struct cdc *tty)
 void bpbin_w1(struct cdc *tty, uint8_t *buf)
 {
 	int i, len;
+	bool found;
 	uint8_t resp;
-	uint8_t search[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	uint8_t devid[8];
+	struct w1_search_state search;
 
 	w1_init(PIN_MOSI);
 	bpbin_send_1w10(tty);
@@ -47,14 +51,18 @@ void bpbin_w1(struct cdc *tty, uint8_t *buf)
 				/* Read byte */
 				w1_read(&resp, 1);
 				cdc_send(tty, &resp, 1);
-			} else if (buf[i] == 8) {
-				/* ROM search (0xF0) */
+			} else if (buf[i] == 8 || buf[i] == 9) {
+				/* ALARM / ROM search (0xEC / 0xF0) */
 				bpbin_ok(tty);
-				cdc_send(tty, search, 8);
-			} else if (buf[i] == 9) {
-				/* ALARM search (0xEC) */
-				bpbin_ok(tty);
-				cdc_send(tty, search, 8);
+				found = w1_find_first((buf[i] & 1) ?
+					W1_ALARM_SEARCH : W1_ROM_SEARCH,
+					&search, devid);
+				while (found) {
+					cdc_send(tty, devid, sizeof(devid));
+					found = w1_find_next(&search, devid);
+				}
+				memset(devid, 0xFF, sizeof(devid));
+				cdc_send(tty, devid, sizeof(devid));
 			} else if ((buf[i] & 0xF0) == 0x10) {
 				/* Send 1-16 bytes */
 				int left = (buf[i] & 0xF) + 1;

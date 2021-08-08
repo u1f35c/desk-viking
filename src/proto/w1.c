@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <chopstx.h>
 
@@ -46,6 +47,29 @@ uint8_t w1_crc(uint8_t *buf, uint8_t len)
 	}
 
 	return crc;
+}
+
+/**
+ * Writes a single bit to the 1-Wire bus.
+ *
+ * :param val: True if we should write a 1, false for a 0.
+ */
+static void w1_write_bit(bool val)
+{
+	__disable_irq();
+	/* Pull low for 6µs for 1, 60µs for 0 */
+	gpio_set_output(w1_gpio, false);
+	if (val)
+		dwt_delay(6);
+	else
+		dwt_delay(60);
+	/* Release to make up to 70µs total */
+	gpio_set_input(w1_gpio);
+	if (val)
+		dwt_delay(64);
+	else
+		dwt_delay(10);
+	__enable_irq();
 }
 
 void w1_write(uint8_t val)
@@ -134,6 +158,118 @@ bool w1_reset(bool nowait)
 		chopstx_usec_wait(410);
 
 	return present;
+}
+
+/**
+ * 1-Wire binary search algorithm. See Maxim Application Note 187:
+ *
+ * https://www.maximintegrated.com/en/design/technical-documents/app-notes/1/187.html
+ *
+ * Called by w1_find_first and w1_find_next.
+ *
+ * :param state: Pointer to a state structure for the search. Will be
+ *               be updated for subsequent calls to this function.
+ * :param devid: 8 byte buffer containing the last seen device, and used for
+ *               storing the ROM ID of the found device. Should be reused
+ *               for repetative calls to this function.
+ * :return: True if a device was found, false otherwise.
+ */
+static bool w1_search(struct w1_search_state *state, uint8_t devid[8])
+{
+	int i, last_zero;
+	bool cmp_id_bit, id_bit, search_direction;
+
+	if (state->last_device_flag || !w1_reset(true)) {
+		state->last_device_flag = false;
+		state->last_discrepancy = 64;
+
+		return false;
+	}
+
+	last_zero = 64;
+
+	w1_reset(false);
+	w1_write(state->search_type);
+
+	for (i = 0; i < 64; i++) {
+		if (i == state->last_discrepancy)
+			search_direction = true;
+		else if (i > state->last_discrepancy)
+			search_direction = false;
+		else
+			search_direction =
+				(devid[i >> 3] & 1 << (i & 7));
+
+		id_bit = w1_read_bit();
+		cmp_id_bit = w1_read_bit();
+
+		/* No devices, clear state and return. */
+		if (id_bit && cmp_id_bit) {
+			state->last_device_flag = false;
+			state->last_discrepancy = 64;
+
+			return false;
+		}
+
+		if (!id_bit && !cmp_id_bit) {
+			/* Both bits valid, go the specified direction */
+			w1_write_bit(search_direction);
+		} else {
+			/* Only one bit valid, take that direction */
+			search_direction = id_bit;
+			w1_write_bit(search_direction);
+		}
+
+		if (!id_bit && !cmp_id_bit && !search_direction)
+			last_zero = i;
+
+		if (search_direction)
+			devid[i >> 3] |= 1 << (i & 7);
+		else
+			devid[i >> 3] &= ~(1 << (i & 7));
+	}
+
+	state->last_discrepancy = last_zero;
+	if (last_zero == 64) {
+		state->last_device_flag = true;
+	}
+
+	return (i == 64);
+}
+
+/**
+ * This function finds the first 1-Wire device on the bus. The state and devid
+ * will be initialised and left ready for subsequent calls to w1_find_next.
+ *
+ * :param state: Pointer to a state structure for the search. Will be
+ *               initialised by this function.
+ * :param devid: 8 byte buffer to store the ROM ID of the first found device.
+ * :return: True if a device was found, false otherwise.
+ */
+bool w1_find_first(uint8_t cmd, struct w1_search_state *state,
+		uint8_t devid[8])
+{
+	state->last_device_flag = false;
+	state->last_discrepancy = 64;
+	state->search_type = cmd;
+	memset(devid, 0, 8);
+
+	return w1_search(state, devid);
+}
+
+/**
+ * This function finds the next 1-Wire device on the bus. The state and devid
+ * must have been initialised by a call to w1_find_first() and will be updated
+ * ready for the next call to w1_find_next.
+ *
+ * :param state: Pointer to a state structure for the search.
+ * :param devid: 8 byte buffer that should contain the last found device on
+ *               calling and returns the ROM ID of the next found device.
+ * :return: True if a device was found, false otherwise.
+ */
+bool w1_find_next(struct w1_search_state *state, uint8_t devid[8])
+{
+	return w1_search(state, devid);
 }
 
 void w1_init(uint8_t gpio)

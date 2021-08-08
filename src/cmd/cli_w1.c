@@ -52,7 +52,9 @@ static void cli_w1_print_devid(struct cli_state *state, uint8_t devid[8])
 
 bool cli_w1_run_macro(struct cli_state *state, unsigned char macro)
 {
+	struct w1_search_state search;
 	uint8_t devid[8];
+	bool found;
 	int i;
 
 	switch (macro) {
@@ -60,6 +62,10 @@ bool cli_w1_run_macro(struct cli_state *state, unsigned char macro)
 		tty_printf(state->tty, "  0. Macro menu\r\n");
 		tty_printf(state->tty,
 			" 51. READ ROM (0x33) *for single device bus\r\n");
+		tty_printf(state->tty,
+			"236. ALARM SEARCH (0xEC)\r\n");
+		tty_printf(state->tty,
+			"240. ROM SEARCH (0xF0)\r\n");
 		break;
 	case 51:
 		cli_w1_start(state);
@@ -70,6 +76,24 @@ bool cli_w1_run_macro(struct cli_state *state, unsigned char macro)
 		}
 		cli_w1_print_devid(state, devid);
 		tty_printf(state->tty, "\r\n");
+		break;
+	case W1_ALARM_SEARCH:
+	case W1_ROM_SEARCH:
+		tty_printf(state->tty, "SEARCH (");
+		tty_printhex(state->tty, macro, 2);
+		tty_printf(state->tty, ")\r\n");
+		tty_printf(state->tty, "Macro     1-Wire address\r\n");
+
+		found = w1_find_first(macro, &search, devid);
+		while (found) {
+			tty_printf(state->tty, "          ");
+			cli_w1_print_devid(state, devid);
+			tty_printf(state->tty, "\r\n");
+
+			found = w1_find_next(&search, devid);
+		}
+
+		tty_printf(state->tty, "Devices IDs are available by MACRO, see (0)\r\n");
 		break;
 	default:
 		tty_printf(state->tty, "Unknown macro, try ? or (0) for help\r\n");
