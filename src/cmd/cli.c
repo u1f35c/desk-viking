@@ -31,6 +31,7 @@ const struct cli_mode_info {
 	void (*stop)(struct cli_state *);
 	void (*read)(struct cli_state *);
 	void (*write)(struct cli_state *, uint8_t val);
+	bool (*run_macro)(struct cli_state *, unsigned char macro);
 } cli_modes[] = {
 	{
 		.name = "HiZ",
@@ -260,6 +261,38 @@ static bool cli_proto_write(struct cli_state *state, unsigned int repeat, uint8_
 	}
 }
 
+static bool cli_proto_run_macro(struct cli_state *state, const char **cmd,
+		unsigned int *len)
+{
+	unsigned int macro, pos;
+
+	if (*len < 2) {
+		return 1;
+	}
+
+	macro = 0;
+	for (pos = 0; (pos < *len) && isdigit((*cmd)[pos]); pos++) {
+		macro *= 10;
+		macro += (*cmd)[pos] - '0';
+	}
+
+	if (pos == *len || pos < 1 || (*cmd)[pos] != ')') {
+		return false;
+	}
+	pos++;
+
+	*len -= pos;
+	*cmd += pos;
+
+	if (cli_modes[state->mode].run_macro) {
+		return cli_modes[state->mode].run_macro(state, macro);
+	} else {
+		return cli_proto_null(state);
+	}
+
+	return true;
+}
+
 /*
  * Command line processing functions
  */
@@ -328,6 +361,10 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 		case ']':
 		case '}':
 			ok = cli_proto_stop(state);
+			break;
+		case '(':
+			ok = cli_proto_run_macro(state, &cmd, &len);
+			tty_printf(state->tty, "\r\n");
 			break;
 		case '@':
 			ok = cli_aux_read(state);
