@@ -38,6 +38,36 @@ You'll get a `build/desk-viking.bin` file which can be flashed over a serial con
 
 `stm32flash -w build/desk-viking.bin -v /dev/ttyUSB0`
 
+### Emulation mode
+
+It's possible to compile desk-viking in "emulation" mode, where it is a standard Linux binary that can be connected to via [USBIP](http://usbip.sourceforge.net/). While this doesn't provide any emulation of a connected device it does allow testing of basic functionality. A [VCD](https://en.wikipedia.org/wiki/Value_change_dump) file is written with details of the various GPIO states, and this can be used with tools such as [sigrok](https://sigrok.org/) to verify operation is as expected.
+
+To build in emulation mode, first link the Chopstx emulation header as the board file:
+
+`ln -s ../chopstx/board/board-gnu-linux.h board.h`
+
+Then compile:
+
+`make EMULATION=1`
+
+And run the resulting binary:
+
+`build/desk-viking`
+
+Then, as root, load the USBIP driver module (I found this didn't get auto-loaded):
+
+`modprobe vhci-hcd`
+
+And attach to the desk-viking exported device:
+
+`usbip attach -r 127.0.0.1 -b 1-1`
+
+When you're done you can detach the device cleanly with:
+
+`usbip detach -p 0`
+
+Once you've detached the `desk-viking` binary will exit and the VCD file will be written.
+
 ## Pinouts
 
 The pinout configuration can be configured in `include/gpio.h`. The default maps as follows:
