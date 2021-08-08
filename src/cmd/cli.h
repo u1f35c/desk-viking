@@ -42,5 +42,6 @@ void cli_w1_setup(struct cli_state *state);
 void cli_w1_start(struct cli_state *state);
 void cli_w1_read(struct cli_state *state);
 void cli_w1_write(struct cli_state *state, uint8_t val);
+bool cli_w1_run_macro(struct cli_state *state, unsigned char macro);
 
 #endif /* __CLI_H__ */

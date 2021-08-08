@@ -43,6 +43,7 @@ const struct cli_mode_info {
 		.start = cli_w1_start,
 		.read = cli_w1_read,
 		.write = cli_w1_write,
+		.run_macro = cli_w1_run_macro,
 	},
 	{
 		.name = "I2C",

@@ -38,3 +38,42 @@ void cli_w1_write(struct cli_state *state, uint8_t val)
 	tty_printhex(state->tty, val, 2);
 	w1_write(val);
 }
+
+static void cli_w1_print_devid(struct cli_state *state, uint8_t devid[8])
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		if (i != 0)
+			tty_putc(state->tty, ' ');
+		tty_printhex(state->tty, devid[i], 2);
+	}
+}
+
+bool cli_w1_run_macro(struct cli_state *state, unsigned char macro)
+{
+	uint8_t devid[8];
+	int i;
+
+	switch (macro) {
+	case 0:
+		tty_printf(state->tty, "  0. Macro menu\r\n");
+		tty_printf(state->tty,
+			" 51. READ ROM (0x33) *for single device bus\r\n");
+		break;
+	case 51:
+		cli_w1_start(state);
+		tty_printf(state->tty, "READ ROM (0x33): ");
+		w1_write(W1_READ_ROM);
+		for (i = 0; i < 8; i++) {
+			devid[i] = w1_read_byte();
+		}
+		cli_w1_print_devid(state, devid);
+		tty_printf(state->tty, "\r\n");
+		break;
+	default:
+		tty_printf(state->tty, "Unknown macro, try ? or (0) for help\r\n");
+	}
+
+	return true;
+}

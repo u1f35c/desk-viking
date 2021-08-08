@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define W1_READ_ROM	0x33
+
 uint8_t w1_crc(uint8_t *buf, uint8_t len);
 void w1_write(uint8_t val);
 bool w1_read_bit(void);
