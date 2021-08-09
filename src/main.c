@@ -20,6 +20,7 @@
 #include "debug.h"
 #include "dwt.h"
 #include "gpio.h"
+#include "util.h"
 #include "version.h"
 
 #define PRIO_CDC 2
@@ -29,17 +30,6 @@
 #include "stack-def.h"
 #define STACK_ADDR_CDC ((uintptr_t)process1_base)
 #define STACK_SIZE_CDC (sizeof process1_base)
-
-static char hexchar (uint8_t x)
-{
-	x &= 0x0f;
-	if (x <= 0x09)
-		return '0' + x;
-	else if (x <= 0x0f)
-		return 'a' + x - 10;
-	else
-		return '?';
-}
 
 bool bpbin_main(struct cdc *tty);
 bool cli_main(struct cdc *tty, const uint8_t *s, int len);
@@ -92,8 +82,8 @@ int main(int argc, const char *argv[])
 		cdc_send(tty, s, 0);
 
 		memcpy(s, "xx: Hello, World with Chopstx!\r\n", 32);
-		s[0] = hexchar (count >> 4);
-		s[1] = hexchar (count & 0x0f);
+		s[0] = util_hexchar(count >> 4);
+		s[1] = util_hexchar(count & 0x0f);
 		s[32] = 0;
 		count++;
 

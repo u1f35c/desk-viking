@@ -10,6 +10,7 @@
 
 #include "cdc.h"
 #include "tty.h"
+#include "util.h"
 
 void tty_printf(struct cdc *tty, const char *str)
 {
@@ -84,11 +85,7 @@ void tty_printhex(struct cdc *tty, unsigned int val, int places)
 
 	while (places > 2) {
 		--places;
-		if ((val & 0xF) > 9) {
-			buf[places] = (val & 0xF) - 10 + 'A';
-		} else {
-			buf[places] = (val & 0xF) + '0';
-		}
+		buf[places] = util_hexchar(val & 0xF);
 		val >>= 4;
 	}
 

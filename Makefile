@@ -11,7 +11,7 @@ CSRC = src/main.c \
        src/cmd/ccproxy.c \
        src/cmd/cli.c src/cmd/cli_dio.c src/cmd/cli_i2c.c src/cmd/cli_w1.c \
        src/proto/buspirate.c src/proto/ccdbg.c src/proto/i2c.c src/proto/w1.c \
-       src/util/debug.c src/util/tty.c src/util/usb-cdc.c
+       src/util/debug.c src/util/tty.c src/util/usb-cdc.c src/util/util.c
 
 USE_SYS = yes
 USE_USB = yes
