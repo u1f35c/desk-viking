@@ -36,6 +36,7 @@ void cli_i2c_start(struct cli_state *state);
 void cli_i2c_stop(struct cli_state *state);
 void cli_i2c_read(struct cli_state *state);
 void cli_i2c_write(struct cli_state *state, uint8_t val);
+bool cli_i2c_run_macro(struct cli_state *state, unsigned char macro);
 
 /* In cli_w1.c */
 void cli_w1_setup(struct cli_state *state);

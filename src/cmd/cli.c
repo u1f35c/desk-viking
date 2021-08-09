@@ -52,6 +52,7 @@ const struct cli_mode_info {
 		.stop = cli_i2c_stop,
 		.read = cli_i2c_read,
 		.write = cli_i2c_write,
+		.run_macro = cli_i2c_run_macro,
 	},
 	{
 		.name = "DIO",
