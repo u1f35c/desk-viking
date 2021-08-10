@@ -162,4 +162,12 @@ void bv_gpio_init(void)
 	gpio_set_input(PIN_CS);
 	gpio_set_input(PIN_MISO);
 	gpio_set_input(PIN_MOSI);
+#ifdef PIN_PULLUPS
+	gpio_set(PIN_PULLUPS, false);
+	gpio_set_output(PIN_PULLUPS, false);
+#endif
+#ifdef PIN_POWER
+	gpio_set(PIN_POWER, false);
+	gpio_set_output(PIN_POWER, false);
+#endif
 }

@@ -11,11 +11,23 @@
 #include "buspirate.h"
 #include "gpio.h"
 
+/**
+ * Configure the extra pins related to Bus Pirate functions (power / pull-up
+ * enable, aux pin, cs pin)
+ *
+ * :param cfg: Lower 4 bits specify desired state for power/pullups/aux/cs
+ */
 void bp_cfg_extra_pins(uint8_t cfg)
 {
 	/* Power */
+#ifdef PIN_POWER
+	gpio_set(PIN_POWER, (cfg & 8));
+#endif
 
 	/* Pull ups */
+#ifdef PIN_PULLUPS
+	gpio_set(PIN_PULLUPS, (cfg & 4));
+#endif
 
 	/* AUX */
 	gpio_set(PIN_AUX, (cfg & 2));

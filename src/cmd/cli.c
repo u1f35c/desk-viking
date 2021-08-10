@@ -182,6 +182,52 @@ static bool cli_reset(struct cli_state *state)
 	return cli_banner(state);
 }
 
+static bool cli_set_power(struct cli_state *state, bool on)
+{
+	if (state->mode == MODE_HIZ) {
+		tty_printf(state->tty, "Command not used in this mode\r\n");
+		return true;
+	}
+
+#ifdef PIN_POWER
+	gpio_set_output(PIN_POWER, on);
+	tty_printf(state->tty, "POWER SUPPLIES ");
+	if (on)
+		tty_printf(state->tty, "ON\r\n");
+	else
+		tty_printf(state->tty, "OFF\r\n");
+#else
+	(void) on;
+	tty_printf(state->tty,
+		"Power control is not supported on this hardware.\r\n");
+#endif
+
+	return true;
+}
+
+static bool cli_set_pullups(struct cli_state *state, bool on)
+{
+	if (state->mode == MODE_HIZ) {
+		tty_printf(state->tty, "Command not used in this mode\r\n");
+		return true;
+	}
+
+#ifdef PIN_PULLUPS
+	gpio_set(PIN_PULLUPS, on);
+	tty_printf(state->tty, "Pull-up resistors ");
+	if (on)
+		tty_printf(state->tty, "ON\r\n");
+	else
+		tty_printf(state->tty, "OFF\r\n");
+#else
+	(void) on;
+	tty_printf(state->tty,
+		"Pull-up resistors are not supported on this hardware.\r\n");
+#endif
+
+	return true;
+}
+
 static bool cli_states(struct cli_state *state)
 {
 	tty_printf(state->tty, "Pinstates:\r\n");
@@ -383,12 +429,24 @@ static void cli_process_cmd(struct cli_state *state, const char *cmd, unsigned i
 		case 'm':
 			ok = cli_mode(state);
 			break;
+		case 'p':
+			ok = cli_set_pullups(state, false);
+			break;
+		case 'P':
+			ok = cli_set_pullups(state, true);
+			break;
 		case 'r':
 			repeat = cli_parse_repeat(&cmd, &len);
 			ok = cli_proto_read(state, repeat);
 			break;
 		case 'v':
 			ok = cli_states(state);
+			break;
+		case 'w':
+			ok = cli_set_power(state, false);
+			break;
+		case 'W':
+			ok = cli_set_power(state, true);
 			break;
 		case '0':
 		case '1':

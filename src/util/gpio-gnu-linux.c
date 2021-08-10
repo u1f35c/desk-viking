@@ -45,18 +45,45 @@ static struct gpio_state {
 } state;
 
 /**
+ * Checks if the pull-up resistors are enabled and if the pin provided is one
+ * of those attached to the pull-ups (MOSI/MISO/CLK/CS).
+ *
+ * :return True if the pull-ups are enabled and this is a pulled-up pin
+ */
+static bool gpio_has_pullup(uint8_t gpio)
+{
+	switch (gpio) {
+	case PIN_CLK:
+	case PIN_CS:
+	case PIN_MISO:
+	case PIN_MOSI:
+		return state.pins[PIN_PULLUPS].state;
+	default:
+		return false;
+	}
+}
+
+/**
  * Returns the state of the GPIO as a char, suitable for the VCD file.
  * Z indicates Hi-Z (i.e input) and for an output either 0 or 1 will be
- * returned. Does not currently take account of open-drain mode.
+ * returned. If the pin is an input or in open drain mode then the state
+ * of any pull-up resistor is considered and Hi-Z returned otherwise.
  */
-static char gpio_state_to_char(struct pin_state *pin)
+static char gpio_state_to_char(uint8_t gpio)
 {
-	if (pin->mode == PIN_INPUT_FLOATING)
+	if (state.pins[gpio].mode == PIN_INPUT_FLOATING)
+		return gpio_has_pullup(gpio) ? '1' : 'Z';
+
+	if (state.pins[gpio].mode == PIN_OUTPUT_OPENDRAIN) {
+		if (!state.pins[gpio].state)
+			return '0';
+		if (gpio_has_pullup(gpio))
+			return '1';
+
 		return 'Z';
-	else if (pin->state)
-		return '1';
-	else
-		return '0';
+	}
+
+	return state.pins[gpio].state ? '1' : '0';
 }
 
 /**
@@ -67,14 +94,14 @@ static char gpio_state_to_char(struct pin_state *pin)
  */
 static bool gpio_vcd_write_state(void)
 {
-	char *pin_tokens = "!\"#$%";
+	char *pin_tokens = "!\"#$%&'";
 	bool changed;
 	char s;
 	int i;
 
 	changed = false;
 	for (i = 0; !changed && i < PIN_COUNT; i++) {
-		if (state.last_state[i] != gpio_state_to_char(&state.pins[i])) {
+		if (state.last_state[i] != gpio_state_to_char(i)) {
 			changed = true;
 		}
 	}
@@ -89,7 +116,7 @@ static bool gpio_vcd_write_state(void)
 	fprintf(state.vcdfile, "#%ld", state.ts);
 
 	for (i = 0; i < PIN_COUNT; i++) {
-		s = gpio_state_to_char(&state.pins[i]);
+		s = gpio_state_to_char(i);
 		if (state.last_state[i] != s) {
 			state.last_state[i] = s;
 			fprintf(state.vcdfile, " %c%c", s, pin_tokens[i]);
@@ -174,7 +201,8 @@ bool gpio_get_direction(uint8_t gpio)
 }
 
 /**
- * Returns the current state (high/low) of the supplied GPIO pin.
+ * Returns the current state (high/low) of the supplied GPIO pin. Takes into
+ * consideration the state of any pull-up resistors associated with the pin.
  *
  * :return: true if the pin is high, false otherwise
  */
@@ -184,7 +212,9 @@ bool gpio_get(uint8_t gpio)
 		return false;
 
 	if (state.pins[gpio].mode == PIN_INPUT_FLOATING) {
-		return false;
+		return gpio_has_pullup(gpio);
+	} else if (state.pins[gpio].mode == PIN_OUTPUT_OPENDRAIN) {
+		return state.pins[gpio].state ? gpio_has_pullup(gpio) : false;
 	} else {
 		return state.pins[gpio].state;
 	}
@@ -240,6 +270,11 @@ void bv_gpio_init(void)
 
 	memset(&state, 0, sizeof(state));
 
+	state.pins[PIN_PULLUPS].state = false;
+	state.pins[PIN_PULLUPS].mode = PIN_OUTPUT_PUSHPULL;
+	state.pins[PIN_POWER].state = false;
+	state.pins[PIN_POWER].mode = PIN_OUTPUT_PUSHPULL;
+
 	t = time(NULL);
 	localtime_r(&t, &timespec);
 	snprintf(buf, sizeof(buf),
@@ -277,6 +312,8 @@ void bv_gpio_init(void)
 	fprintf(state.vcdfile, "$var wire 1 # CLK $end\n");
 	fprintf(state.vcdfile, "$var wire 1 $ MISO $end\n");
 	fprintf(state.vcdfile, "$var wire 1 %% CS $end\n");
+	fprintf(state.vcdfile, "$var wire 1 & PULLUPS $end\n");
+	fprintf(state.vcdfile, "$var wire 1 ' POWER $end\n");
 
 	fprintf(state.vcdfile, "$upscope $end\n");
 	fprintf(state.vcdfile, "$enddefinitions $end\n");

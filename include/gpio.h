@@ -19,7 +19,9 @@
 #define PIN_CLK		2
 #define PIN_MISO	3
 #define PIN_CS		4
-#define PIN_COUNT	5
+#define PIN_PULLUPS	5
+#define PIN_POWER	6
+#define PIN_COUNT	7
 
 #else
 
