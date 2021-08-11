@@ -16,6 +16,12 @@ CSRC = src/main.c \
 USE_SYS = yes
 USE_USB = yes
 
+# Detect if our board.h is for emulation mode and set EMULATION automatically
+BOARD_IS_LINUX=$(shell grep -q -s 'BOARD_NAME "GNU/Linux"' board.h && echo 1 || echo 0)
+ifeq ($(BOARD_IS_LINUX),1)
+EMULATION = 1
+endif
+
 ifeq ($(EMULATION),)
 ARCH   = cortex-m
 MCU    = cortex-m3
