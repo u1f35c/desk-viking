@@ -139,7 +139,15 @@ void w1_read(uint8_t *buf, uint8_t len)
 	}
 }
 
-bool w1_reset(bool nowait)
+/**
+ * Reset the 1-wire bus and check if there are any devices present.
+ *
+ * :param nowait: True if we shouldn't do the post-presence wait. Disables
+ *                detection of a lack of pullups.
+ * :return: An indication of whether there are 1-wire devices present,
+ *          or if the pullups might be missing.
+ */
+enum w1_present_state w1_reset(bool nowait)
 {
 	bool present;
 
@@ -157,7 +165,17 @@ bool w1_reset(bool nowait)
 	if (!nowait)
 		chopstx_usec_wait(410);
 
-	return present;
+	if (!present)
+		return W1_NOT_PRESENT;
+
+	/*
+	 * If the line is still low we probably don't have pullups, or there's
+	 * a short.
+	 */
+	if (!nowait && !gpio_get(w1_gpio))
+		return W1_NO_PULLUP;
+
+	return W1_PRESENT;
 }
 
 /**

@@ -105,6 +105,25 @@ bool i2c_write(uint8_t val)
 	return i2c_read_bit();
 }
 
+/**
+ * Performs a basic check to confirm that the i2c connection has working
+ * pull up resistors by setting the open-drain outputs to high and confirming
+ * that the result read from both is high.
+ *
+ * :return: True if the clock and data lines appear to have working pull up
+ *          resistors.
+ */
+bool i2c_pullups_ok(void)
+{
+	/* Let the open-drain outputs be pulled high */
+	gpio_set(i2c_sda, true);
+	gpio_set(i2c_scl, true);
+	dwt_delay(10);
+
+	/* Pullups are only ok if both pins are now high */
+	return gpio_get(i2c_sda) && gpio_get(i2c_scl);
+}
+
 void i2c_init(uint8_t scl, uint8_t sda)
 {
 	i2c_scl = scl;

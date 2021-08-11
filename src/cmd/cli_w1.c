@@ -19,11 +19,19 @@ void cli_w1_setup(struct cli_state *state)
 
 void cli_w1_start(struct cli_state *state)
 {
+	enum w1_present_state present;
+
 	tty_printf(state->tty, "BUS RESET: ");
-	tty_printf(state->tty, w1_reset(false) ? "present\r\n" :
-			"no device detected\r\n");
-	// BUS RESET Warning: *No device detected
-	// BUS RESET Warning: *Short or no pull-up
+
+	present = w1_reset(false);
+
+	if (present == W1_PRESENT) {
+		tty_printf(state->tty, "present\r\n");
+	} else if (present == W1_NOT_PRESENT) {
+		tty_printf(state->tty, "no device detected\r\n");
+	} else if (present == W1_NO_PULLUP) {
+		tty_printf(state->tty, "short or no-pullup\r\n");
+	}
 }
 
 void cli_w1_read(struct cli_state *state)

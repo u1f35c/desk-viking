@@ -14,6 +14,12 @@
 #define W1_ALARM_SEARCH	0xEC
 #define W1_ROM_SEARCH	0xF0
 
+enum w1_present_state {
+	W1_NOT_PRESENT = 0,
+	W1_PRESENT,
+	W1_NO_PULLUP,
+};
+
 /**
  * Stores the state of an active 1-wire search process
  */
@@ -31,7 +37,7 @@ void w1_write(uint8_t val);
 bool w1_read_bit(void);
 uint8_t w1_read_byte(void);
 void w1_read(uint8_t *buf, uint8_t len);
-bool w1_reset(bool nowait);
+enum w1_present_state w1_reset(bool nowait);
 bool w1_find_first(uint8_t cmd, struct w1_search_state *state,
 		uint8_t devid[8]);
 bool w1_find_next(struct w1_search_state *state, uint8_t devid[8]);

@@ -25,6 +25,9 @@ void cli_i2c_setup(struct cli_state *state)
 
 void cli_i2c_start(struct cli_state *state)
 {
+	if (!i2c_pullups_ok())
+		tty_printf(state->tty, "short or no-pullup\r\n");
+
 	i2c_start();
 	tty_printf(state->tty, "I2C START CONDITION\r\n");
 }
@@ -67,6 +70,11 @@ static void cli_i2c_scan(struct cli_state *state)
 {
 	int i, j;
 	char buf[5];
+
+	if (!i2c_pullups_ok()) {
+		tty_printf(state->tty, "short or no-pullup\r\n");
+		return;
+	}
 
 	tty_printf(state->tty,
 		"      0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");

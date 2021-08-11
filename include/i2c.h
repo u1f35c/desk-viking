@@ -13,6 +13,7 @@ bool i2c_read_bit(void);
 void i2c_write_bit(bool bit);
 uint8_t i2c_read(void);
 bool i2c_write(uint8_t val);
+bool i2c_pullups_ok(void);
 void i2c_init(uint8_t scl, uint8_t sda);
 
 #endif /* __I2C_H__ */
