@@ -87,8 +87,8 @@ static const uint8_t vcom_device_desc[18] = {
 	0x00,			/* bDeviceSubClass.                 */
 	0x00,			/* bDeviceProtocol.                 */
 	0x40,			/* bMaxPacketSize.                  */
-	0xFF, 0xFF,		/* idVendor  */
-	0x01, 0x00,		/* idProduct */
+	0x09, 0x12,		/* idVendor  */
+	0x5c, 0xde,		/* idProduct */
 	0x00, 0x01,		/* bcdDevice  */
 	1,			/* iManufacturer.                   */
 	2,			/* iProduct.                        */
