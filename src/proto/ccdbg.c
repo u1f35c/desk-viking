@@ -16,6 +16,7 @@
 #include <chopstx.h>
 
 #include "ccdbg.h"
+#include "dwt.h"
 #include "gpio.h"
 
 /*
@@ -75,12 +76,12 @@ static uint8_t ccdbg_read_int(struct ccdbg_state *ctx)
 	for (i = 0; i < 8; i++) {
 		/* Toggle clock and shift data in */
 		gpio_set(ctx->dc, true);
-		chopstx_usec_wait(2);
+		dwt_delay(2);
 		b <<= 1;
 		if (gpio_get(ctx->dd))
 			b |= 1;
 		gpio_set(ctx->dc, false);
-		chopstx_usec_wait(2);
+		dwt_delay(2);
 	}
 
 	return b;
@@ -114,9 +115,9 @@ bool ccdbg_write(struct ccdbg_state *ctx, uint8_t b)
 		/* Toggle clock and shift data */
 		gpio_set(ctx->dc, true);
 		b <<= 1;
-		chopstx_usec_wait(2);
+		dwt_delay(2);
 		gpio_set(ctx->dc, false);
-		chopstx_usec_wait(2);
+		dwt_delay(2);
 	}
 
 	return true;
@@ -144,14 +145,14 @@ static bool ccdbg_switchread(struct ccdbg_state *ctx)
 	 * Limit cycles to 255.
 	 */
 	gpio_set_input(ctx->dd);
-	chopstx_usec_wait(2);
+	dwt_delay(2);
 	count = 255;
 	while (gpio_get(ctx->dd)) {
 		for (i = 0; i < 8; i++) {
 			gpio_set(ctx->dc, true);
-			chopstx_usec_wait(2);
+			dwt_delay(2);
 			gpio_set(ctx->dc, false);
-			chopstx_usec_wait(2);
+			dwt_delay(2);
 		}
 		if (!--count) {
 			ctx->error = CC_ERROR_NOT_WIRED;
@@ -161,7 +162,7 @@ static bool ccdbg_switchread(struct ccdbg_state *ctx)
 	}
 
 	if (count < 255)
-		chopstx_usec_wait(2);
+		dwt_delay(2);
 
 	return true;
 }
@@ -214,17 +215,17 @@ void ccdbg_enter(struct ccdbg_state *ctx)
 
 	ctx->error = CC_ERROR_NONE;
 	gpio_set(ctx->rst, false);
-	chopstx_usec_wait(200);
+	dwt_delay(200);
 	gpio_set(ctx->dc, true);
-	chopstx_usec_wait(3);
+	dwt_delay(3);
 	gpio_set(ctx->dc, false);
-	chopstx_usec_wait(3);
+	dwt_delay(3);
 	gpio_set(ctx->dc, true);
-	chopstx_usec_wait(3);
+	dwt_delay(3);
 	gpio_set(ctx->dc, false);
-	chopstx_usec_wait(200);
+	dwt_delay(200);
 	gpio_set(ctx->rst, true);
-	chopstx_usec_wait(200);
+	dwt_delay(200);
 
 	ctx->indebug = true;
 }
