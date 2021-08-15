@@ -71,23 +71,24 @@ int main(int argc, const char *argv[])
 
 	count = 0;
 	while (1) {
-		uint8_t s[70];
+		uint8_t buf[CDC_BUFSIZE];
 
 		debug_print("Waiting for connection.\r\n");
 		cdc_connected(tty, true);
 
-		chopstx_usec_wait (50*1000);
+		chopstx_usec_wait(50*1000);
 
 		/* Send ZLP at the beginning.  */
-		cdc_send(tty, s, 0);
+		cdc_send(tty, buf, 0);
 
-		memcpy(s, "xx: Hello, World with Chopstx!\r\n", 32);
-		s[0] = util_hexchar(count >> 4);
-		s[1] = util_hexchar(count & 0x0f);
-		s[32] = 0;
+		/* "Got connection: xx\r\n" == 20 bytes */
+		memcpy(buf, "Got connection: xx\r\n", 20);
+		buf[16] = util_hexchar(count >> 4);
+		buf[17] = util_hexchar(count & 0x0f);
+		buf[20] = 0;
 		count++;
 
-		debug_print((char *)s);
+		debug_print((char *)buf);
 
 		zerocnt = 0;
 		while (1) {
@@ -95,27 +96,27 @@ int main(int argc, const char *argv[])
 			uint32_t usec;
 
 			usec = 3000000;	/* 3.0 seconds */
-			size = cdc_recv(tty, s + 4, &usec);
+			size = cdc_recv(tty, buf, &usec);
 			/* Disconnection */
 			if (size < 0)
 				break;
 
-			if (s[4] == 0xF0) {
+			if (buf[0] == 0xF0) {
 				/* CCLib Proxy mode */
 				debug_print("Entering CCLib proxy mode.\r\n");
-				ccproxy_main(tty, &s[4], size);
+				ccproxy_main(tty, buf, size);
 			} else {
 				/* Bus Pirate modes; 1 == cli, 2 == raw, 0 == ignore */
 				int mode = 0;
 
-				if (s[4] == '\r') {
+				if (buf[0] == '\r') {
 					/* Bus Pirate-like CLI if user hits enter */
 					zerocnt = 0;
 					mode = 1; /* Interactive */
-				} else if (s[4] == 0) {
+				} else if (buf[0] == 0) {
 					/* Bus Pirate raw mode after 20 NULs */
 					for (i = 0; i < size && zerocnt < 20; i++) {
-						if (s[i + 4] == 0) {
+						if (buf[i] == 0) {
 							zerocnt++;
 						} else {
 							zerocnt = 0;
@@ -132,7 +133,7 @@ int main(int argc, const char *argv[])
 				while (mode != 0) {
 					if (mode == 1) {
 						debug_print("Entering interactive mode.\r\n");
-						mode = cli_main(tty, &s[4], size) ? 2 : 0;
+						mode = cli_main(tty, buf, size) ? 2 : 0;
 					} else if (mode == 2) {
 						debug_print("Entering Bus Pirate binary mode.\r\n");
 						mode = bpbin_main(tty) ? 1 : 0;
