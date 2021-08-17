@@ -190,7 +190,7 @@ static bool cli_set_power(struct cli_state *state, bool on)
 	}
 
 #ifdef PIN_POWER
-	gpio_set_output(PIN_POWER, on);
+	gpio_set(PIN_POWER, on);
 	tty_printf(state->tty, "POWER SUPPLIES ");
 	if (on)
 		tty_printf(state->tty, "ON\r\n");
